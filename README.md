@@ -25,4 +25,4 @@ Escaneie o QR code com o app Expo Go no celular.
 - [x] Tela de detalhe de um ponto
 - [ ] Navegação entre lista e detalhe (aula 5)
 - [ ] Persistência de dados (aulas seguintes)
-- [ ] Cadastro de pontos (aulas seguintes)
+- [ ] Cadastro de pontos (aulas seguintes) 
