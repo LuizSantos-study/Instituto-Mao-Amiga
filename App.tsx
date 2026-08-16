@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 
 // Importação das telas da pasta Telas
 import PontosColeta from './Telas/PontosColeta/PontosColeta';
-import DetalhesPontosColeta from './Telas/Detalhes/DetalhesPontosColeta';
+import Detalhes from './Telas/Detalhes/DetalhesPontosColeta';
 
 const Stack = createNativeStackNavigator();
 
@@ -20,7 +20,7 @@ export default function App() {
         />
         <Stack.Screen 
           name="DetalhesPontosColeta" 
-          component={DetalhesPontosColeta} 
+          component={Detalhes} 
           options={{ title: 'Detalhes do Ponto' }} 
         />
       </Stack.Navigator>
