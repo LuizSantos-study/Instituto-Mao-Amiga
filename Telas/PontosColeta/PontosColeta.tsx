@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, FlatList, TextInput } from 'react-native';
 
 export type Ponto = {
   id: string;
@@ -62,11 +62,31 @@ export const PONTOS_MOCK: Ponto[] = [
 ];
 
 export default function PontosColeta({ navigation }: any) {
+  // Armazena o texto digitado
+  const [busca, setBusca] = useState('');
+
+  // Filtra a lista de forma dinamica sempre que o termo 'busca' mudar
+  const pontosFiltrados = useMemo(() => {
+    return PONTOS_MOCK.filter((ponto) =>
+      ponto.nome.toLowerCase().includes(busca.toLowerCase())
+    );
+  }, [busca]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>Lista de Pontos de Coleta</Text>
+
+      <TextInput
+        style={styles.inputBusca}
+        placeholder="Buscar pontos..."
+        placeholderTextColor="#7c7c8a"
+        value={busca}
+        onChangeText={setBusca}
+        autoCorrect={false}
+      />
+
       <FlatList
-        data={PONTOS_MOCK}
+        data={pontosFiltrados}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         renderItem={({ item }) => (
@@ -84,7 +104,7 @@ export default function PontosColeta({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, // Garante que a tela ocupe todo o espaço disponível
+    flex: 1,
     backgroundColor: '#f5f5f5',
     paddingTop: 20,
   },
@@ -94,9 +114,21 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
+  inputBusca: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderColor: '#e0e0e0',
+    borderWidth: 1,
+    fontSize: 16,
+    color: '#333',
+  },
   listContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 20, // Espaçamento inferior para a rolagem
+    paddingBottom: 20,
   },
   card: {
     backgroundColor: '#fff',
