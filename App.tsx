@@ -1,11 +1,13 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { StatusBar } from 'expo-status-bar';
+import React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { StatusBar } from "expo-status-bar";
 
 // Importação das telas da pasta Telas
-import PontosColeta from './Telas/PontosColeta/PontosColeta';
-import Detalhes from './Telas/Detalhes/DetalhesPontosColeta';
+import PontosColeta from "./Telas/PontosColeta/PontosColeta";
+import Detalhes from "./Telas/Detalhes/DetalhesPontosColeta";
+import TelaCadastroDoacao from "./Telas/Cadastro/TelaCadastroDoacao";
+import { PONTOS_MOCK } from "./Telas/PontosColeta/PontosColeta";
 
 const Stack = createNativeStackNavigator();
 
@@ -13,16 +15,21 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="PontosColeta">
-        <Stack.Screen 
-          name="PontosColeta" 
-          component={PontosColeta} 
-          options={{ title: 'Pontos de Coleta' }} 
+        <Stack.Screen
+          name="PontosColeta"
+          component={PontosColeta}
+          options={{ title: "Pontos de Coleta" }}
         />
-        <Stack.Screen 
-          name="DetalhesPontosColeta" 
-          component={Detalhes} 
-          options={{ title: 'Detalhes do Ponto' }} 
+        <Stack.Screen
+          name="DetalhesPontosColeta"
+          component={Detalhes}
+          options={{ title: "Detalhes do Ponto" }}
         />
+        <Stack.Screen name="CadastroDoacao" options={{ title: "Nova Doação" }}>
+          {(props) => (
+            <TelaCadastroDoacao {...props} pontosDisponiveis={PONTOS_MOCK} />
+          )}
+        </Stack.Screen>
       </Stack.Navigator>
       <StatusBar style="auto" />
     </NavigationContainer>
