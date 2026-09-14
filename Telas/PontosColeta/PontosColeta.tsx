@@ -124,6 +124,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
     paddingTop: 20,
+    alignItems: 'center',
   },
   titulo: {
     fontSize: 18,
@@ -133,6 +134,8 @@ const styles = StyleSheet.create({
   },
   inputBusca: {
     backgroundColor: "#fff",
+    width: "92%", 
+    maxWidth: 600,
     marginHorizontal: 16,
     marginBottom: 16,
     paddingHorizontal: 16,
@@ -146,6 +149,7 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingHorizontal: 16,
     paddingBottom: 20,
+    maxWidth: 600,
   },
   card: {
     backgroundColor: "#fff",
@@ -161,6 +165,8 @@ const styles = StyleSheet.create({
   },
   botaoIrParaCadastro: {
     backgroundColor: "#0284c7",
+    width: "92%",
+    maxWidth: 600,
     marginHorizontal: 16,
     marginBottom: 20,
     paddingVertical: 14,

@@ -9,7 +9,7 @@ import {
   ScrollView,
 } from "react-native";
 
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export interface PontoColeta {
   id: string;
@@ -117,10 +117,19 @@ export default function TelaCadastroDoacao({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f4f4f6" },
-  scrollContent: { padding: 16 },
+  container: { 
+    flex: 1, 
+    backgroundColor: "#f4f4f6",
+  },
+  scrollContent: { 
+    padding: 16,
+  },
+  formWrapper: {
+    width: "100%",
+    maxWidth: 600, 
+  },
   titulo: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
     color: "#1a1a1a",
     marginBottom: 16,
@@ -130,39 +139,64 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#444",
     marginBottom: 6,
-    marginTop: 10,
+    marginTop: 12,
   },
   input: {
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    minHeight: 48, 
   },
   pontosContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginTop: 4,
+    marginTop: 6,
   },
   pontoOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderWidth: 1,
     borderColor: "#0284c7",
     borderRadius: 20,
     backgroundColor: "#fff",
+    minHeight: 44, 
+    justifyContent: "center",
   },
-  pontoOptionSelected: { backgroundColor: "#0284c7" },
-  pontoOptionText: { color: "#0284c7", fontSize: 13, fontWeight: "500" },
-  pontoOptionTextSelected: { color: "#fff" },
-  erro: { color: "#dc2626", fontSize: 13, marginTop: 12, fontWeight: "500" },
+  pontoOptionSelected: { 
+    backgroundColor: "#0284c7",
+  },
+  pontoOptionText: { 
+    color: "#0284c7", 
+    fontSize: 14, 
+    fontWeight: "500",
+  },
+  pontoOptionTextSelected: { 
+    color: "#fff",
+  },
+  erro: { 
+    color: "#dc2626", 
+    fontSize: 13, 
+    marginTop: 12, 
+    fontWeight: "500",
+  },
   botaoSalvar: {
     backgroundColor: "#0284c7",
-    padding: 14,
+    paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 20,
+    justifyContent: "center",
+    marginTop: 24,
+    minHeight: 48, 
+    alignSelf: "flex-start",
   },
-  botaoSalvarTexto: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  botaoSalvarTexto: { 
+    color: "#fff", 
+    fontWeight: "bold", 
+    fontSize: 16,
+  },
 });
