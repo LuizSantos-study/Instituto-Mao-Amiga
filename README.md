@@ -24,5 +24,5 @@ Escaneie o QR code com o app Expo Go no celular.
 - [x] Tela de lista de pontos (mockada)
 - [x] Tela de detalhe de um ponto
 - [x] Navegação entre lista e detalhe (aula 5)
-- [ ] Persistência de dados (aulas seguintes)
+- [x] Persistência de dados local com AsyncStorage (Issue #07)
 - [ ] Cadastro de pontos (aulas seguintes) 

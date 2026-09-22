@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,9 +7,15 @@ import {
   StyleSheet,
   Keyboard,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  salvarDoacaoStorage,
+  obterUltimaDoacaoStorage,
+  Doacao,
+} from "../../services/doacoesStorage";
 
 export interface PontoColeta {
   id: string;
@@ -31,8 +37,27 @@ export default function TelaCadastroDoacao({
     null,
   );
   const [erro, setErro] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const [ultimaDoacao, setUltimaDoacao] = useState<Doacao | null>(null);
 
-  function validarESalvar() {
+  async function carregarUltimaDoacao() {
+    try {
+      const ultima = await obterUltimaDoacaoStorage();
+      setUltimaDoacao(ultima);
+    } catch (e) {
+      console.error("Erro ao carregar última doação:", e);
+    }
+  }
+
+  useEffect(() => {
+    carregarUltimaDoacao();
+    const unsubscribe = navigation.addListener("focus", () => {
+      carregarUltimaDoacao();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  async function validarESalvar() {
     if (tipoItem.trim() === "") {
       setErro("Informe o tipo do item para doação.");
       return;
@@ -54,79 +79,145 @@ export default function TelaCadastroDoacao({
       return;
     }
 
-    setErro("");
-    Keyboard.dismiss();
-    alert("Doação registrada com sucesso!");
-    navigation.goBack();
+    const ponto = pontosDisponiveis.find((p) => p.id === pontoSelecionadoId);
+    if (!ponto) {
+      setErro("Ponto de destino selecionado não foi encontrado.");
+      return;
+    }
+
+    try {
+      setSalvando(true);
+      setErro("");
+
+      await salvarDoacaoStorage({
+        tipoItem: tipoItem.trim(),
+        quantidade: qtdNumerica,
+        pontoId: ponto.id,
+        pontoNome: ponto.nome,
+      });
+
+      Keyboard.dismiss();
+      alert("Doação registrada com sucesso no dispositivo!");
+
+      // Limpa os campos do formulário
+      setTipoItem("");
+      setQuantidade("");
+      setPontoSelecionadoId(null);
+
+      // Redireciona para visualização das doações cadastradas
+      navigation.navigate("DoacoesCadastradas");
+    } catch (err) {
+      setErro("Ocorreu um erro ao salvar a doação localmente.");
+    } finally {
+      setSalvando(false);
+    }
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.titulo}>Cadastrar Item para Doação</Text>
+        <View style={styles.formWrapper}>
+          <Text style={styles.titulo}>Cadastrar Item para Doação</Text>
 
-        <Text style={styles.label}>Tipo do Item:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ex.: Roupas, Alimentos, Brinquedos"
-          value={tipoItem}
-          onChangeText={setTipoItem}
-        />
+          <Text style={styles.label}>Tipo do Item:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex.: Roupas, Alimentos, Brinquedos"
+            value={tipoItem}
+            onChangeText={setTipoItem}
+          />
 
-        <Text style={styles.label}>Quantidade:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ex.: 5"
-          value={quantidade}
-          onChangeText={setQuantidade}
-          keyboardType="number-pad"
-        />
+          <Text style={styles.label}>Quantidade:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex.: 5"
+            value={quantidade}
+            onChangeText={setQuantidade}
+            keyboardType="number-pad"
+          />
 
-        <Text style={styles.label}>Ponto de Destino:</Text>
-        <View style={styles.pontosContainer}>
-          {pontosDisponiveis.map((ponto) => (
-            <TouchableOpacity
-              key={ponto.id}
-              style={[
-                styles.pontoOption,
-                pontoSelecionadoId === ponto.id && styles.pontoOptionSelected,
-              ]}
-              onPress={() => setPontoSelecionadoId(ponto.id)}
-            >
-              <Text
+          <Text style={styles.label}>Ponto de Destino:</Text>
+          <View style={styles.pontosContainer}>
+            {pontosDisponiveis.map((ponto) => (
+              <TouchableOpacity
+                key={ponto.id}
                 style={[
-                  styles.pontoOptionText,
-                  pontoSelecionadoId === ponto.id &&
-                    styles.pontoOptionTextSelected,
+                  styles.pontoOption,
+                  pontoSelecionadoId === ponto.id && styles.pontoOptionSelected,
                 ]}
+                onPress={() => setPontoSelecionadoId(ponto.id)}
               >
-                {ponto.nome}
+                <Text
+                  style={[
+                    styles.pontoOptionText,
+                    pontoSelecionadoId === ponto.id &&
+                      styles.pontoOptionTextSelected,
+                  ]}
+                >
+                  {ponto.nome}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {erro !== "" && <Text style={styles.erro}>{erro}</Text>}
+
+          <TouchableOpacity
+            style={[styles.botaoSalvar, salvando && styles.botaoDesabilitado]}
+            onPress={validarESalvar}
+            disabled={salvando}
+          >
+            {salvando ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.botaoSalvarTexto}>Registrar Doação</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.botaoVerDoacoes}
+            onPress={() => navigation.navigate("DoacoesCadastradas")}
+          >
+            <Text style={styles.botaoVerDoacoesTexto}>
+              📦 Ver Doações Cadastradas
+            </Text>
+          </TouchableOpacity>
+
+          {ultimaDoacao && (
+            <View style={styles.cardUltimaDoacao}>
+              <Text style={styles.tituloUltimaDoacao}>
+                Última doação salva (recuperada do AsyncStorage):
               </Text>
-            </TouchableOpacity>
-          ))}
+              <Text style={styles.itemUltimaDoacao}>
+                {ultimaDoacao.tipoItem} — {ultimaDoacao.quantidade}{" "}
+                {ultimaDoacao.quantidade === 1 ? "unidade" : "unidades"}
+              </Text>
+              <Text style={styles.detalheUltimaDoacao}>
+                📍 Destino: {ultimaDoacao.pontoNome}
+              </Text>
+              <Text style={styles.dataUltimaDoacao}>
+                🕒 {ultimaDoacao.dataRegistro}
+              </Text>
+            </View>
+          )}
         </View>
-
-        {erro !== "" && <Text style={styles.erro}>{erro}</Text>}
-
-        <TouchableOpacity style={styles.botaoSalvar} onPress={validarESalvar}>
-          <Text style={styles.botaoSalvarTexto}>Registrar Doação</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
+  container: {
+    flex: 1,
     backgroundColor: "#f4f4f6",
   },
-  scrollContent: { 
+  scrollContent: {
     padding: 16,
+    alignItems: "center",
   },
   formWrapper: {
     width: "100%",
-    maxWidth: 600, 
+    maxWidth: 600,
   },
   titulo: {
     fontSize: 22,
@@ -149,7 +240,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
-    minHeight: 48, 
+    minHeight: 48,
   },
   pontosContainer: {
     flexDirection: "row",
@@ -164,24 +255,24 @@ const styles = StyleSheet.create({
     borderColor: "#0284c7",
     borderRadius: 20,
     backgroundColor: "#fff",
-    minHeight: 44, 
+    minHeight: 44,
     justifyContent: "center",
   },
-  pontoOptionSelected: { 
+  pontoOptionSelected: {
     backgroundColor: "#0284c7",
   },
-  pontoOptionText: { 
-    color: "#0284c7", 
-    fontSize: 14, 
+  pontoOptionText: {
+    color: "#0284c7",
+    fontSize: 14,
     fontWeight: "500",
   },
-  pontoOptionTextSelected: { 
+  pontoOptionTextSelected: {
     color: "#fff",
   },
-  erro: { 
-    color: "#dc2626", 
-    fontSize: 13, 
-    marginTop: 12, 
+  erro: {
+    color: "#dc2626",
+    fontSize: 13,
+    marginTop: 12,
     fontWeight: "500",
   },
   botaoSalvar: {
@@ -191,12 +282,64 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 24,
-    minHeight: 48, 
-    alignSelf: "flex-start",
+    minHeight: 48,
+    width: "100%",
   },
-  botaoSalvarTexto: { 
-    color: "#fff", 
-    fontWeight: "bold", 
+  botaoDesabilitado: {
+    opacity: 0.7,
+  },
+  botaoSalvarTexto: {
+    color: "#fff",
+    fontWeight: "bold",
     fontSize: 16,
+  },
+  botaoVerDoacoes: {
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: "#0284c7",
+    paddingVertical: 13,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 12,
+    minHeight: 48,
+    width: "100%",
+  },
+  botaoVerDoacoesTexto: {
+    color: "#0284c7",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  cardUltimaDoacao: {
+    backgroundColor: "#fff",
+    marginTop: 24,
+    padding: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderLeftWidth: 4,
+    borderLeftColor: "#0284c7",
+  },
+  tituloUltimaDoacao: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#64748b",
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  itemUltimaDoacao: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#1e293b",
+    marginBottom: 2,
+  },
+  detalheUltimaDoacao: {
+    fontSize: 14,
+    color: "#475569",
+    marginBottom: 2,
+  },
+  dataUltimaDoacao: {
+    fontSize: 12,
+    color: "#94a3b8",
   },
 });

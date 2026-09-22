@@ -7,6 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import PontosColeta from "./Telas/PontosColeta/PontosColeta";
 import Detalhes from "./Telas/Detalhes/DetalhesPontosColeta";
 import TelaCadastroDoacao from "./Telas/Cadastro/TelaCadastroDoacao";
+import TelaDoacoesCadastradas from "./Telas/Doacoes/TelaDoacoesCadastradas";
 import { PONTOS_MOCK } from "./Telas/PontosColeta/PontosColeta";
 
 const Stack = createNativeStackNavigator();
@@ -30,6 +31,11 @@ export default function App() {
             <TelaCadastroDoacao {...props} pontosDisponiveis={PONTOS_MOCK} />
           )}
         </Stack.Screen>
+        <Stack.Screen
+          name="DoacoesCadastradas"
+          component={TelaDoacoesCadastradas}
+          options={{ title: "Doações Cadastradas" }}
+        />
       </Stack.Navigator>
       <StatusBar style="auto" />
     </NavigationContainer>

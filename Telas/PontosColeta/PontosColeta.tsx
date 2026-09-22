@@ -107,14 +107,25 @@ export default function PontosColeta({ navigation }: any) {
           </TouchableOpacity>
         )}
       />
-      <TouchableOpacity
-        style={styles.botaoIrParaCadastro}
-        onPress={() => navigation.navigate("CadastroDoacao")}
-      >
-        <Text style={styles.botaoIrParaCadastroTexto}>
-          + Cadastrar Item para Doação
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.botoesContainer}>
+        <TouchableOpacity
+          style={styles.botaoIrParaCadastro}
+          onPress={() => navigation.navigate("CadastroDoacao")}
+        >
+          <Text style={styles.botaoIrParaCadastroTexto}>
+            + Cadastrar Item para Doação
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.botaoVerDoacoes}
+          onPress={() => navigation.navigate("DoacoesCadastradas")}
+        >
+          <Text style={styles.botaoVerDoacoesTexto}>
+            📦 Ver Doações Cadastradas
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -163,18 +174,34 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#1B3A5C",
   },
-  botaoIrParaCadastro: {
-    backgroundColor: "#0284c7",
+  botoesContainer: {
     width: "92%",
     maxWidth: 600,
     marginHorizontal: 16,
     marginBottom: 20,
+    gap: 10,
+  },
+  botaoIrParaCadastro: {
+    backgroundColor: "#0284c7",
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
   },
   botaoIrParaCadastroTexto: {
     color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  botaoVerDoacoes: {
+    backgroundColor: "#ffffff",
+    borderWidth: 1.5,
+    borderColor: "#0284c7",
+    paddingVertical: 13,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  botaoVerDoacoesTexto: {
+    color: "#0284c7",
     fontSize: 16,
     fontWeight: "bold",
   },
