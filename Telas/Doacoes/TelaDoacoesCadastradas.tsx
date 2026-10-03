@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
+  TextInput,
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
@@ -17,6 +18,7 @@ import ItemDoacao from "./ItemDoacao";
 export default function TelaDoacoesCadastradas({ navigation }: any) {
   const [doacoes, setDoacoes] = useState<Doacao[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [buscaTipo, setBuscaTipo] = useState("");
 
   async function carregarDoacoes() {
     setCarregando(true);
@@ -33,6 +35,17 @@ export default function TelaDoacoesCadastradas({ navigation }: any) {
     return unsubscribe;
   }, [navigation]);
 
+  // Filtro calculado dinamicamente a partir do termo digitado sem alterar os dados salvos nem duplicar estado
+  const doacoesFiltradas = useMemo(() => {
+    if (!buscaTipo.trim()) {
+      return doacoes;
+    }
+    const termo = buscaTipo.trim().toLowerCase();
+    return doacoes.filter((item) =>
+      item.tipoItem.toLowerCase().includes(termo),
+    );
+  }, [doacoes, buscaTipo]);
+
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <View style={styles.wrapper}>
@@ -41,6 +54,16 @@ export default function TelaDoacoesCadastradas({ navigation }: any) {
           Histórico de itens registrados localmente no aparelho.
         </Text>
 
+        <TextInput
+          style={styles.inputBusca}
+          placeholder="Filtrar por tipo de item (ex.: Roupas, Alimentos)..."
+          placeholderTextColor="#7c7c8a"
+          value={buscaTipo}
+          onChangeText={setBuscaTipo}
+          autoCorrect={false}
+          autoCapitalize="none"
+        />
+
         {carregando ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#0284c7" />
@@ -48,28 +71,48 @@ export default function TelaDoacoesCadastradas({ navigation }: any) {
           </View>
         ) : (
           <FlatList
-            data={doacoes}
+            data={doacoesFiltradas}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContainer}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyIcon}>📦</Text>
-                <Text style={styles.emptyTitulo}>
-                  Nenhuma doação cadastrada ainda
-                </Text>
-                <Text style={styles.emptySubtitulo}>
-                  Os itens que você registrar aparecerão listados aqui.
-                </Text>
-                <TouchableOpacity
-                  style={styles.botaoCadastrarVazio}
-                  onPress={() => navigation.navigate("CadastroDoacao")}
-                >
-                  <Text style={styles.botaoCadastrarVazioTexto}>
-                    + Cadastrar Doação
+              doacoes.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyIcon}>📦</Text>
+                  <Text style={styles.emptyTitulo}>
+                    Nenhuma doação cadastrada ainda
                   </Text>
-                </TouchableOpacity>
-              </View>
+                  <Text style={styles.emptySubtitulo}>
+                    Os itens que você registrar aparecerão listados aqui.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.botaoCadastrarVazio}
+                    onPress={() => navigation.navigate("CadastroDoacao")}
+                  >
+                    <Text style={styles.botaoCadastrarVazioTexto}>
+                      + Cadastrar Doação
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyIcon}>🔍</Text>
+                  <Text style={styles.emptyTitulo}>
+                    Nenhuma doação encontrada
+                  </Text>
+                  <Text style={styles.emptySubtitulo}>
+                    Não encontramos itens com o tipo "{buscaTipo}". Tente outro termo.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.botaoLimparBusca}
+                    onPress={() => setBuscaTipo("")}
+                  >
+                    <Text style={styles.botaoLimparBuscaTexto}>
+                      Limpar filtro
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )
             }
             renderItem={({ item }) => (
               <ItemDoacao
@@ -141,6 +184,19 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingBottom: 16,
   },
+  inputBusca: {
+    backgroundColor: "#ffffff",
+    width: "100%",
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderColor: "#e2e8f0",
+    borderWidth: 1,
+    fontSize: 16,
+    color: "#333",
+    minHeight: 48,
+  },
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",
@@ -180,6 +236,19 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 15,
     fontWeight: "bold",
+  },
+  botaoLimparBusca: {
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#0284c7",
+  },
+  botaoLimparBuscaTexto: {
+    color: "#0284c7",
+    fontSize: 14,
+    fontWeight: "600",
   },
   botaoNovaDoacao: {
     backgroundColor: "#0284c7",
