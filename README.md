@@ -29,4 +29,5 @@ Escaneie o QR code com o app Expo Go no celular.
 - [x] Detalhe da doação com dados via route.params e exclusão com Alert.alert (Issue #10)
 - [x] Edição de doação com formulário pré-preenchido e atualizarDoacao mantendo ID (Issue #11)
 - [x] Filtro dinâmico por tipo de item no histórico via useMemo sem duplicar estado (Issue #12)
+- [x] Resumo dinâmico no topo com total geral e soma por tipo ordenada decrescentemente (Issue #13)
 - [ ] Cadastro de pontos (aulas seguintes) 

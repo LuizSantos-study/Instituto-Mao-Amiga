@@ -46,6 +46,29 @@ export default function TelaDoacoesCadastradas({ navigation }: any) {
     );
   }, [doacoes, buscaTipo]);
 
+  // Resumo dinâmico com o total geral e a quantidade somada por tipo de item (ordenado do maior para o menor)
+  const { totalGeralRegistros, totalGeralQuantidade, totaisPorTipo } =
+    useMemo(() => {
+      const contagem: Record<string, number> = {};
+      let totalQtd = 0;
+
+      for (const item of doacoes) {
+        const tipo = item.tipoItem.trim();
+        contagem[tipo] = (contagem[tipo] || 0) + item.quantidade;
+        totalQtd += item.quantidade;
+      }
+
+      const tiposOrdenados = Object.entries(contagem)
+        .map(([tipo, quantidade]) => ({ tipo, quantidade }))
+        .sort((a, b) => b.quantidade - a.quantidade);
+
+      return {
+        totalGeralRegistros: doacoes.length,
+        totalGeralQuantidade: totalQtd,
+        totaisPorTipo: tiposOrdenados,
+      };
+    }, [doacoes]);
+
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <View style={styles.wrapper}>
@@ -53,6 +76,48 @@ export default function TelaDoacoesCadastradas({ navigation }: any) {
         <Text style={styles.subtitulo}>
           Histórico de itens registrados localmente no aparelho.
         </Text>
+
+        {!carregando && doacoes.length > 0 && (
+          <View style={styles.cardResumo}>
+            <View style={styles.resumoHeader}>
+              <Text style={styles.resumoTitulo}>📊 Resumo Geral</Text>
+              <Text style={styles.resumoTotalGeral}>
+                {totalGeralRegistros}{" "}
+                {totalGeralRegistros === 1 ? "registro" : "registros"} (
+                {totalGeralQuantidade}{" "}
+                {totalGeralQuantidade === 1 ? "item" : "itens"})
+              </Text>
+            </View>
+
+            <Text style={styles.resumoSubtitulo}>
+              Totais por tipo (do maior para o menor):
+            </Text>
+            <View style={styles.resumoTiposContainer}>
+              {totaisPorTipo.map(({ tipo, quantidade }) => {
+                const ativo = buscaTipo.trim().toLowerCase() === tipo.toLowerCase();
+                return (
+                  <TouchableOpacity
+                    key={tipo}
+                    style={[styles.chipResumo, ativo && styles.chipResumoAtivo]}
+                    onPress={() =>
+                      setBuscaTipo((prev) =>
+                        prev.trim().toLowerCase() === tipo.toLowerCase()
+                          ? ""
+                          : tipo,
+                      )
+                    }
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.chipTipo}>{tipo}</Text>
+                    <Text style={styles.chipQuantidade}>
+                      {quantidade} {quantidade === 1 ? "un" : "un"}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         <TextInput
           style={styles.inputBusca}
@@ -183,6 +248,78 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingBottom: 16,
+  },
+  cardResumo: {
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderLeftWidth: 4,
+    borderLeftColor: "#0284c7",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+  },
+  resumoHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  resumoTitulo: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#1e293b",
+  },
+  resumoTotalGeral: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#0284c7",
+  },
+  resumoSubtitulo: {
+    fontSize: 12,
+    color: "#64748b",
+    marginBottom: 10,
+    textTransform: "uppercase",
+    fontWeight: "600",
+  },
+  resumoTiposContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  chipResumo: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f1f5f9",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    gap: 6,
+  },
+  chipResumoAtivo: {
+    backgroundColor: "#e0f2fe",
+    borderColor: "#0284c7",
+  },
+  chipTipo: {
+    fontSize: 13,
+    color: "#334155",
+    fontWeight: "500",
+  },
+  chipQuantidade: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#0369a1",
+    backgroundColor: "#e0f2fe",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
   inputBusca: {
     backgroundColor: "#ffffff",
