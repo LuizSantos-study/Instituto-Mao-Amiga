@@ -71,7 +71,21 @@ export default function TelaDoacoesCadastradas({ navigation }: any) {
                 </TouchableOpacity>
               </View>
             }
-            renderItem={({ item }) => <ItemDoacao item={item} />}
+            renderItem={({ item }) => (
+              <ItemDoacao
+                item={item}
+                onPress={(doacao) =>
+                  navigation.navigate("DetalhesDoacao", {
+                    doacao,
+                    onExcluir: (idExcluido: string) => {
+                      setDoacoes((prev) =>
+                        prev.filter((d) => d.id !== idExcluido),
+                      );
+                    },
+                  })
+                }
+              />
+            )}
           />
         )}
 

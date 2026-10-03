@@ -8,6 +8,7 @@ import PontosColeta from "./Telas/PontosColeta/PontosColeta";
 import Detalhes from "./Telas/Detalhes/DetalhesPontosColeta";
 import TelaCadastroDoacao from "./Telas/Cadastro/TelaCadastroDoacao";
 import TelaDoacoesCadastradas from "./Telas/Doacoes/TelaDoacoesCadastradas";
+import DetalhesDoacao from "./Telas/Detalhes/DetalhesDoacao";
 import { PONTOS_MOCK } from "./Telas/PontosColeta/PontosColeta";
 
 const Stack = createNativeStackNavigator();
@@ -35,6 +36,11 @@ export default function App() {
           name="DoacoesCadastradas"
           component={TelaDoacoesCadastradas}
           options={{ title: "Minhas doações" }}
+        />
+        <Stack.Screen
+          name="DetalhesDoacao"
+          component={DetalhesDoacao}
+          options={{ title: "Detalhes da Doação" }}
         />
       </Stack.Navigator>
       <StatusBar style="auto" />
