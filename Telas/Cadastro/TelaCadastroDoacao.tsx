@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   salvarDoacao,
+  atualizarDoacao,
   obterUltimaDoacao,
   Doacao,
 } from "../../services/doacoesStorage";
@@ -24,17 +25,24 @@ export interface PontoColeta {
 
 interface TelaCadastroDoacaoProps {
   navigation: any;
+  route?: any;
   pontosDisponiveis: PontoColeta[];
 }
 
 export default function TelaCadastroDoacao({
   navigation,
+  route,
   pontosDisponiveis,
 }: TelaCadastroDoacaoProps) {
-  const [tipoItem, setTipoItem] = useState("");
-  const [quantidade, setQuantidade] = useState("");
+  const doacaoParaEditar: Doacao | undefined = route?.params?.doacaoParaEditar;
+  const modoEdicao = Boolean(doacaoParaEditar);
+
+  const [tipoItem, setTipoItem] = useState(doacaoParaEditar?.tipoItem ?? "");
+  const [quantidade, setQuantidade] = useState(
+    doacaoParaEditar ? String(doacaoParaEditar.quantidade) : "",
+  );
   const [pontoSelecionadoId, setPontoSelecionadoId] = useState<string | null>(
-    null,
+    doacaoParaEditar?.pontoId ?? null,
   );
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
@@ -50,12 +58,25 @@ export default function TelaCadastroDoacao({
   }
 
   useEffect(() => {
-    carregarUltimaDoacao();
-    const unsubscribe = navigation.addListener("focus", () => {
+    if (doacaoParaEditar) {
+      setTipoItem(doacaoParaEditar.tipoItem);
+      setQuantidade(String(doacaoParaEditar.quantidade));
+      setPontoSelecionadoId(doacaoParaEditar.pontoId);
+      navigation.setOptions({ title: "Editar Doação" });
+    } else {
+      navigation.setOptions({ title: "Nova Doação" });
       carregarUltimaDoacao();
-    });
-    return unsubscribe;
-  }, [navigation]);
+    }
+  }, [doacaoParaEditar, navigation]);
+
+  useEffect(() => {
+    if (!modoEdicao) {
+      const unsubscribe = navigation.addListener("focus", () => {
+        carregarUltimaDoacao();
+      });
+      return unsubscribe;
+    }
+  }, [navigation, modoEdicao]);
 
   async function validarESalvar() {
     if (tipoItem.trim() === "") {
@@ -89,25 +110,46 @@ export default function TelaCadastroDoacao({
       setSalvando(true);
       setErro("");
 
-      await salvarDoacao({
-        tipoItem: tipoItem.trim(),
-        quantidade: qtdNumerica,
-        pontoId: ponto.id,
-        pontoNome: ponto.nome,
-      });
+      if (modoEdicao && doacaoParaEditar) {
+        const doacaoAtualizada: Doacao = {
+          id: doacaoParaEditar.id,
+          tipoItem: tipoItem.trim(),
+          quantidade: qtdNumerica,
+          pontoId: ponto.id,
+          pontoNome: ponto.nome,
+          criadoEm:
+            doacaoParaEditar.criadoEm || doacaoParaEditar.dataRegistro || "",
+          dataRegistro: doacaoParaEditar.dataRegistro,
+        };
 
-      Keyboard.dismiss();
-      alert("Doação registrada com sucesso no dispositivo!");
+        await atualizarDoacao(doacaoAtualizada);
+        Keyboard.dismiss();
+        alert("Doação atualizada com sucesso!");
+        navigation.navigate("DoacoesCadastradas");
+      } else {
+        await salvarDoacao({
+          tipoItem: tipoItem.trim(),
+          quantidade: qtdNumerica,
+          pontoId: ponto.id,
+          pontoNome: ponto.nome,
+        });
 
-      // Limpa os campos do formulário
-      setTipoItem("");
-      setQuantidade("");
-      setPontoSelecionadoId(null);
+        Keyboard.dismiss();
+        alert("Doação registrada com sucesso no dispositivo!");
 
-      // Redireciona para visualização das doações cadastradas
-      navigation.navigate("DoacoesCadastradas");
+        // Limpa os campos do formulário
+        setTipoItem("");
+        setQuantidade("");
+        setPontoSelecionadoId(null);
+
+        navigation.navigate("DoacoesCadastradas");
+      }
     } catch (err) {
-      setErro("Ocorreu um erro ao salvar a doação localmente.");
+      setErro(
+        modoEdicao
+          ? "Ocorreu um erro ao atualizar a doação localmente."
+          : "Ocorreu um erro ao salvar a doação localmente.",
+      );
     } finally {
       setSalvando(false);
     }
@@ -117,7 +159,9 @@ export default function TelaCadastroDoacao({
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.formWrapper}>
-          <Text style={styles.titulo}>Cadastrar Item para Doação</Text>
+          <Text style={styles.titulo}>
+            {modoEdicao ? "Editar Doação" : "Cadastrar Item para Doação"}
+          </Text>
 
           <Text style={styles.label}>Tipo do Item:</Text>
           <TextInput
@@ -170,7 +214,9 @@ export default function TelaCadastroDoacao({
             {salvando ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.botaoSalvarTexto}>Registrar Doação</Text>
+              <Text style={styles.botaoSalvarTexto}>
+                {modoEdicao ? "Salvar Alterações" : "Registrar Doação"}
+              </Text>
             )}
           </TouchableOpacity>
 
@@ -183,7 +229,7 @@ export default function TelaCadastroDoacao({
             </Text>
           </TouchableOpacity>
 
-          {ultimaDoacao && (
+          {!modoEdicao && ultimaDoacao && (
             <View style={styles.cardUltimaDoacao}>
               <Text style={styles.tituloUltimaDoacao}>
                 Última doação salva (recuperada do AsyncStorage):

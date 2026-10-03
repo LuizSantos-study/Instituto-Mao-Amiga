@@ -86,6 +86,25 @@ export async function excluirDoacao(id: string): Promise<Doacao[]> {
 }
 
 /**
+ * Atualiza uma doação existente no AsyncStorage mantendo seu id original.
+ */
+export async function atualizarDoacao(
+  doacaoAtualizada: Doacao,
+): Promise<Doacao[]> {
+  try {
+    const doacoes = await listarDoacoes();
+    const listaAtualizada = doacoes.map((item) =>
+      item.id === doacaoAtualizada.id ? doacaoAtualizada : item,
+    );
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(listaAtualizada));
+    return listaAtualizada;
+  } catch (error) {
+    console.error("Erro ao atualizar doação no AsyncStorage:", error);
+    throw error;
+  }
+}
+
+/**
  * Limpa todo o histórico de doações no AsyncStorage.
  */
 export async function limparDoacoes(): Promise<void> {
@@ -102,3 +121,4 @@ export const obterDoacoesStorage = listarDoacoes;
 export const obterUltimaDoacaoStorage = obterUltimaDoacao;
 export const removerDoacaoStorage = excluirDoacao;
 export const limparDoacoesStorage = limparDoacoes;
+export const atualizarDoacaoStorage = atualizarDoacao;

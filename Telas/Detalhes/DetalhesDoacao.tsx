@@ -70,6 +70,16 @@ export default function DetalhesDoacao({ route, navigation }: any) {
 
         <View style={styles.acoesContainer}>
           <TouchableOpacity
+            style={styles.botaoEditar}
+            onPress={() =>
+              navigation.navigate("CadastroDoacao", { doacaoParaEditar: doacao })
+            }
+            activeOpacity={0.8}
+          >
+            <Text style={styles.botaoEditarTexto}>✏️ Editar Doação</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={styles.botaoExcluir}
             onPress={confirmarExclusao}
             activeOpacity={0.8}
@@ -158,6 +168,19 @@ const styles = StyleSheet.create({
   acoesContainer: {
     width: "100%",
     gap: 12,
+  },
+  botaoEditar: {
+    backgroundColor: "#0284c7",
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
+  },
+  botaoEditarTexto: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   botaoExcluir: {
     backgroundColor: "#dc2626",

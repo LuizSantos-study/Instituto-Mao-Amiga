@@ -27,4 +27,5 @@ Escaneie o QR code com o app Expo Go no celular.
 - [x] Persistência de dados local com AsyncStorage e histórico de doações (Issue #08)
 - [x] Tela "Minhas doações" com FlatList, ItemDoacao em React.memo e empty state com botão (Issue #09)
 - [x] Detalhe da doação com dados via route.params e exclusão com Alert.alert (Issue #10)
+- [x] Edição de doação com formulário pré-preenchido e atualizarDoacao mantendo ID (Issue #11)
 - [ ] Cadastro de pontos (aulas seguintes) 
