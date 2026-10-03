@@ -1,5 +1,12 @@
 import React from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Alert } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Doacao, excluirDoacao } from "../../services/doacoesStorage";
 
@@ -37,57 +44,62 @@ export default function DetalhesDoacao({ route, navigation }: any) {
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-      <View style={styles.wrapper}>
-        <View style={styles.card}>
-          <View style={styles.header}>
-            <Text style={styles.tipoItem}>{doacao.tipoItem}</Text>
-            <View style={styles.badgeQuantidade}>
-              <Text style={styles.badgeTexto}>
-                {doacao.quantidade} {doacao.quantidade === 1 ? "unidade" : "unidades"}
-              </Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.wrapper}>
+          <View style={styles.card}>
+            <View style={styles.header}>
+              <Text style={styles.tipoItem}>{doacao.tipoItem}</Text>
+              <View style={styles.badgeQuantidade}>
+                <Text style={styles.badgeTexto}>
+                  {doacao.quantidade} {doacao.quantidade === 1 ? "unidade" : "unidades"}
+                </Text>
+              </View>
             </View>
-          </View>
 
-          <View style={styles.secao}>
-            <Text style={styles.label}>Ponto de Coleta / Destino</Text>
-            <Text style={styles.valor}>📍 {doacao.pontoNome}</Text>
-          </View>
-
-          {(doacao.criadoEm || doacao.dataRegistro) && (
             <View style={styles.secao}>
-              <Text style={styles.label}>Data do Cadastro</Text>
-              <Text style={styles.valor}>
-                🕒 {doacao.criadoEm || doacao.dataRegistro}
-              </Text>
+              <Text style={styles.label}>Ponto de Coleta / Destino</Text>
+              <Text style={styles.valor}>📍 {doacao.pontoNome}</Text>
             </View>
-          )}
 
-          <View style={styles.secao}>
-            <Text style={styles.label}>Código de Identificação</Text>
-            <Text style={styles.valorId}>#{doacao.id}</Text>
+            {(doacao.criadoEm || doacao.dataRegistro) && (
+              <View style={styles.secao}>
+                <Text style={styles.label}>Data do Cadastro</Text>
+                <Text style={styles.valor}>
+                  🕒 {doacao.criadoEm || doacao.dataRegistro}
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.secao}>
+              <Text style={styles.label}>Código de Identificação</Text>
+              <Text style={styles.valorId}>#{doacao.id}</Text>
+            </View>
+          </View>
+
+          <View style={styles.acoesContainer}>
+            <TouchableOpacity
+              style={styles.botaoEditar}
+              onPress={() =>
+                navigation.navigate("CadastroDoacao", { doacaoParaEditar: doacao })
+              }
+              activeOpacity={0.8}
+            >
+              <Text style={styles.botaoEditarTexto}>✏️ Editar Doação</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.botaoExcluir}
+              onPress={confirmarExclusao}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.botaoExcluirTexto}>🗑️ Excluir Doação</Text>
+            </TouchableOpacity>
           </View>
         </View>
-
-        <View style={styles.acoesContainer}>
-          <TouchableOpacity
-            style={styles.botaoEditar}
-            onPress={() =>
-              navigation.navigate("CadastroDoacao", { doacaoParaEditar: doacao })
-            }
-            activeOpacity={0.8}
-          >
-            <Text style={styles.botaoEditarTexto}>✏️ Editar Doação</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.botaoExcluir}
-            onPress={confirmarExclusao}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.botaoExcluirTexto}>🗑️ Excluir Doação</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -96,16 +108,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
+  },
+  scrollContent: {
     alignItems: "center",
+    paddingTop: 24,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+    minHeight: "100%",
   },
   wrapper: {
     flex: 1,
     width: "100%",
     maxWidth: 600,
-    paddingHorizontal: 16,
-    paddingTop: 24,
     justifyContent: "space-between",
-    paddingBottom: 16,
+    minHeight: 460,
   },
   card: {
     backgroundColor: "#ffffff",

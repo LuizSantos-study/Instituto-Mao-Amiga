@@ -96,12 +96,16 @@ export default function PontosColeta({ navigation }: any) {
         data={pontosFiltrados}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
             onPress={() =>
               navigation.navigate("DetalhesPontosColeta", { ponto: item })
             }
+            activeOpacity={0.7}
           >
             <Text style={styles.nome}>{item.nome}</Text>
           </TouchableOpacity>
@@ -145,7 +149,7 @@ const styles = StyleSheet.create({
   },
   inputBusca: {
     backgroundColor: "#fff",
-    width: "92%", 
+    width: "92%",
     maxWidth: 600,
     marginHorizontal: 16,
     marginBottom: 16,
@@ -156,10 +160,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     fontSize: 16,
     color: "#333",
+    minHeight: 48,
   },
   listContainer: {
     paddingHorizontal: 16,
     paddingBottom: 20,
+    width: "100%",
     maxWidth: 600,
   },
   card: {
@@ -168,6 +174,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 12,
     elevation: 4,
+    minHeight: 52,
+    justifyContent: "center",
   },
   nome: {
     fontSize: 18,
@@ -186,6 +194,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
   },
   botaoIrParaCadastroTexto: {
     color: "#ffffff",
@@ -199,6 +209,8 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     borderRadius: 8,
     alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
   },
   botaoVerDoacoesTexto: {
     color: "#0284c7",

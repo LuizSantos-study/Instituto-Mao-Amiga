@@ -8,6 +8,8 @@ import {
   Keyboard,
   ScrollView,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -156,12 +158,20 @@ export default function TelaCadastroDoacao({
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.formWrapper}>
-          <Text style={styles.titulo}>
-            {modoEdicao ? "Editar Doação" : "Cadastrar Item para Doação"}
-          </Text>
+    <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.formWrapper}>
+            <Text style={styles.titulo}>
+              {modoEdicao ? "Editar Doação" : "Cadastrar Item para Doação"}
+            </Text>
 
           <Text style={styles.label}>Tipo do Item:</Text>
           <TextInput
@@ -248,7 +258,8 @@ export default function TelaCadastroDoacao({
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </KeyboardAvoidingView>
+  </SafeAreaView>
   );
 }
 
@@ -256,6 +267,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f4f4f6",
+  },
+  keyboardAvoid: {
+    flex: 1,
+    width: "100%",
   },
   scrollContent: {
     padding: 16,

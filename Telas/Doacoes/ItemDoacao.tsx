@@ -64,6 +64,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     borderLeftWidth: 4,
     borderLeftColor: "#0284c7",
+    minHeight: 48,
   },
   cardHeader: {
     flexDirection: "row",

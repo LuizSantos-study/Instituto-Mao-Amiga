@@ -30,4 +30,8 @@ Escaneie o QR code com o app Expo Go no celular.
 - [x] Edição de doação com formulário pré-preenchido e atualizarDoacao mantendo ID (Issue #11)
 - [x] Filtro dinâmico por tipo de item no histórico via useMemo sem duplicar estado (Issue #12)
 - [x] Resumo dinâmico no topo com total geral e soma por tipo ordenada decrescentemente (Issue #13)
-- [ ] Cadastro de pontos (aulas seguintes) 
+- [x] Acabamento, responsividade, áreas de toque >= 44px e roteiro de demonstração (Issue #14)
+
+## Demonstração e Decisão Técnica
+
+Consulte o [Roteiro de Demonstração e Defesa Técnica](ROTEIRO_DEMONSTRACAO.md) para a apresentação de 3 minutos e o detalhamento da arquitetura de estado e persistência. 

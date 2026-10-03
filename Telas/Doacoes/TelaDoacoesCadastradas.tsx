@@ -140,6 +140,8 @@ export default function TelaDoacoesCadastradas({ navigation }: any) {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContainer}
             showsVerticalScrollIndicator={false}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
             ListEmptyComponent={
               doacoes.length === 0 ? (
                 <View style={styles.emptyContainer}>
@@ -296,12 +298,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#f1f5f9",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#e2e8f0",
     gap: 6,
+    minHeight: 44,
+    justifyContent: "center",
   },
   chipResumoAtivo: {
     backgroundColor: "#e0f2fe",
@@ -368,6 +372,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 12,
     alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
   },
   botaoCadastrarVazioTexto: {
     color: "#ffffff",
@@ -376,11 +382,14 @@ const styles = StyleSheet.create({
   },
   botaoLimparBusca: {
     marginTop: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 6,
     borderWidth: 1,
     borderColor: "#0284c7",
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   botaoLimparBuscaTexto: {
     color: "#0284c7",
