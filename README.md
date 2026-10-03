@@ -25,4 +25,5 @@ Escaneie o QR code com o app Expo Go no celular.
 - [x] Tela de detalhe de um ponto
 - [x] Navegação entre lista e detalhe (aula 5)
 - [x] Persistência de dados local com AsyncStorage e histórico de doações (Issue #08)
+- [x] Tela "Minhas doações" com FlatList, ItemDoacao em React.memo e empty state com botão (Issue #09)
 - [ ] Cadastro de pontos (aulas seguintes) 

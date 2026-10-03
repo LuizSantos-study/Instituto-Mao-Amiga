@@ -12,6 +12,7 @@ import {
   Doacao,
   listarDoacoes,
 } from "../../services/doacoesStorage";
+import ItemDoacao from "./ItemDoacao";
 
 export default function TelaDoacoesCadastradas({ navigation }: any) {
   const [doacoes, setDoacoes] = useState<Doacao[]>([]);
@@ -35,9 +36,9 @@ export default function TelaDoacoesCadastradas({ navigation }: any) {
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <View style={styles.wrapper}>
-        <Text style={styles.titulo}>Doações Cadastradas</Text>
+        <Text style={styles.titulo}>Minhas doações</Text>
         <Text style={styles.subtitulo}>
-          Itens registrados localmente e seus respectivos pontos de entrega.
+          Histórico de itens registrados localmente no aparelho.
         </Text>
 
         {carregando ? (
@@ -58,45 +59,30 @@ export default function TelaDoacoesCadastradas({ navigation }: any) {
                   Nenhuma doação cadastrada ainda
                 </Text>
                 <Text style={styles.emptySubtitulo}>
-                  Os itens que você cadastrar no formulário aparecerão listados aqui.
+                  Os itens que você registrar aparecerão listados aqui.
                 </Text>
+                <TouchableOpacity
+                  style={styles.botaoCadastrarVazio}
+                  onPress={() => navigation.navigate("CadastroDoacao")}
+                >
+                  <Text style={styles.botaoCadastrarVazioTexto}>
+                    + Cadastrar Doação
+                  </Text>
+                </TouchableOpacity>
               </View>
             }
-            renderItem={({ item }) => (
-              <View style={styles.card}>
-                <View style={styles.cardHeader}>
-                  <Text style={styles.tipoItem}>{item.tipoItem}</Text>
-                  <View style={styles.badgeQuantidade}>
-                    <Text style={styles.badgeTexto}>
-                      {item.quantidade} {item.quantidade === 1 ? "unidade" : "unidades"}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.linhaInfo}>
-                  <Text style={styles.labelInfo}>Ponto de Coleta:</Text>
-                  <Text style={styles.valorPonto}>📍 {item.pontoNome}</Text>
-                </View>
-
-                {(item.criadoEm || item.dataRegistro) && (
-                  <View style={styles.linhaInfo}>
-                    <Text style={styles.labelInfo}>Data do cadastro:</Text>
-                    <Text style={styles.valorData}>
-                      🕒 {item.criadoEm || item.dataRegistro}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
+            renderItem={({ item }) => <ItemDoacao item={item} />}
           />
         )}
 
-        <TouchableOpacity
-          style={styles.botaoNovaDoacao}
-          onPress={() => navigation.navigate("CadastroDoacao")}
-        >
-          <Text style={styles.botaoNovaDoacaoTexto}>+ Nova Doação</Text>
-        </TouchableOpacity>
+        {doacoes.length > 0 && (
+          <TouchableOpacity
+            style={styles.botaoNovaDoacao}
+            onPress={() => navigation.navigate("CadastroDoacao")}
+          >
+            <Text style={styles.botaoNovaDoacaoTexto}>+ Nova Doação</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -141,62 +127,6 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingBottom: 16,
   },
-  card: {
-    backgroundColor: "#ffffff",
-    padding: 16,
-    borderRadius: 10,
-    marginBottom: 12,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    borderLeftWidth: 4,
-    borderLeftColor: "#0284c7",
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  tipoItem: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1B3A5C",
-    flex: 1,
-  },
-  badgeQuantidade: {
-    backgroundColor: "#e0f2fe",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  badgeTexto: {
-    color: "#0369a1",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  linhaInfo: {
-    marginTop: 6,
-  },
-  labelInfo: {
-    fontSize: 12,
-    color: "#777",
-    fontWeight: "600",
-    textTransform: "uppercase",
-  },
-  valorPonto: {
-    fontSize: 15,
-    color: "#333",
-    fontWeight: "500",
-    marginTop: 2,
-  },
-  valorData: {
-    fontSize: 13,
-    color: "#555",
-    marginTop: 2,
-  },
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",
@@ -222,6 +152,20 @@ const styles = StyleSheet.create({
     color: "#777",
     textAlign: "center",
     lineHeight: 20,
+    marginBottom: 8,
+  },
+  botaoCadastrarVazio: {
+    backgroundColor: "#0284c7",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    marginTop: 12,
+    alignItems: "center",
+  },
+  botaoCadastrarVazioTexto: {
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: "bold",
   },
   botaoNovaDoacao: {
     backgroundColor: "#0284c7",

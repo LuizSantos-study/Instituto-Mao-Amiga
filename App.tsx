@@ -34,7 +34,7 @@ export default function App() {
         <Stack.Screen
           name="DoacoesCadastradas"
           component={TelaDoacoesCadastradas}
-          options={{ title: "Doações Cadastradas" }}
+          options={{ title: "Minhas doações" }}
         />
       </Stack.Navigator>
       <StatusBar style="auto" />

@@ -179,7 +179,7 @@ export default function TelaCadastroDoacao({
             onPress={() => navigation.navigate("DoacoesCadastradas")}
           >
             <Text style={styles.botaoVerDoacoesTexto}>
-              📦 Ver Doações Cadastradas
+              📦 Ver Minhas Doações
             </Text>
           </TouchableOpacity>
 
