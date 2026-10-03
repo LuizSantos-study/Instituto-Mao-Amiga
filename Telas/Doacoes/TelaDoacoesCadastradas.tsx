@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Doacao,
-  obterDoacoesStorage,
+  listarDoacoes,
 } from "../../services/doacoesStorage";
 
 export default function TelaDoacoesCadastradas({ navigation }: any) {
@@ -19,7 +19,7 @@ export default function TelaDoacoesCadastradas({ navigation }: any) {
 
   async function carregarDoacoes() {
     setCarregando(true);
-    const dados = await obterDoacoesStorage();
+    const dados = await listarDoacoes();
     setDoacoes(dados);
     setCarregando(false);
   }
@@ -78,10 +78,12 @@ export default function TelaDoacoesCadastradas({ navigation }: any) {
                   <Text style={styles.valorPonto}>📍 {item.pontoNome}</Text>
                 </View>
 
-                {item.dataRegistro && (
+                {(item.criadoEm || item.dataRegistro) && (
                   <View style={styles.linhaInfo}>
                     <Text style={styles.labelInfo}>Data do cadastro:</Text>
-                    <Text style={styles.valorData}>🕒 {item.dataRegistro}</Text>
+                    <Text style={styles.valorData}>
+                      🕒 {item.criadoEm || item.dataRegistro}
+                    </Text>
                   </View>
                 )}
               </View>

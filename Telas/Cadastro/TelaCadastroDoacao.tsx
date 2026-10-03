@@ -12,8 +12,8 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  salvarDoacaoStorage,
-  obterUltimaDoacaoStorage,
+  salvarDoacao,
+  obterUltimaDoacao,
   Doacao,
 } from "../../services/doacoesStorage";
 
@@ -42,7 +42,7 @@ export default function TelaCadastroDoacao({
 
   async function carregarUltimaDoacao() {
     try {
-      const ultima = await obterUltimaDoacaoStorage();
+      const ultima = await obterUltimaDoacao();
       setUltimaDoacao(ultima);
     } catch (e) {
       console.error("Erro ao carregar última doação:", e);
@@ -89,7 +89,7 @@ export default function TelaCadastroDoacao({
       setSalvando(true);
       setErro("");
 
-      await salvarDoacaoStorage({
+      await salvarDoacao({
         tipoItem: tipoItem.trim(),
         quantidade: qtdNumerica,
         pontoId: ponto.id,
@@ -196,7 +196,7 @@ export default function TelaCadastroDoacao({
                 📍 Destino: {ultimaDoacao.pontoNome}
               </Text>
               <Text style={styles.dataUltimaDoacao}>
-                🕒 {ultimaDoacao.dataRegistro}
+                🕒 {ultimaDoacao.criadoEm || ultimaDoacao.dataRegistro}
               </Text>
             </View>
           )}
