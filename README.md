@@ -32,6 +32,10 @@ Escaneie o QR code com o app Expo Go no celular.
 - [x] Resumo dinâmico no topo com total geral e soma por tipo ordenada decrescentemente (Issue #13)
 - [x] Acabamento, responsividade, áreas de toque >= 44px e roteiro de demonstração (Issue #14)
 
+## Nova Etapa - Integração com API
+
+- [x] Estrutura inicial da API Rest
+
 ## Demonstração e Decisão Técnica
 
 Consulte o [Roteiro de Demonstração e Defesa Técnica](ROTEIRO_DEMONSTRACAO.md) para a apresentação de 3 minutos e o detalhamento da arquitetura de estado e persistência. 
