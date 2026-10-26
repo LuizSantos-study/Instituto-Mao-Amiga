@@ -13,23 +13,25 @@ import {
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import {
   salvarDoacao,
   atualizarDoacao,
   obterUltimaDoacao,
-  Doacao,
 } from "../../services/doacoesStorage";
+import { Doacao } from "../../types/doacao";
+import { PontoColeta } from "../../types/ponto";
+import { RootStackParamList } from "../../types/navigation";
 
-export interface PontoColeta {
-  id: string;
-  nome: string;
-}
+// Reexporta o tipo para manter compatibilidade com quem importava daqui
+export type { PontoColeta };
 
-interface TelaCadastroDoacaoProps {
-  navigation: any;
-  route?: any;
+type TelaCadastroDoacaoProps = NativeStackScreenProps<
+  RootStackParamList,
+  "CadastroDoacao"
+> & {
   pontosDisponiveis: PontoColeta[];
-}
+};
 
 export default function TelaCadastroDoacao({
   navigation,

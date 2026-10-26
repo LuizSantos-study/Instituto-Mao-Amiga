@@ -3,15 +3,16 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 
-// Importação das telas da pasta Telas
-import PontosColeta from "./Telas/PontosColeta/PontosColeta";
-import Detalhes from "./Telas/Detalhes/DetalhesPontosColeta";
-import TelaCadastroDoacao from "./Telas/Cadastro/TelaCadastroDoacao";
-import TelaDoacoesCadastradas from "./Telas/Doacoes/TelaDoacoesCadastradas";
-import DetalhesDoacao from "./Telas/Detalhes/DetalhesDoacao";
-import { PONTOS_MOCK } from "./Telas/PontosColeta/PontosColeta";
+// Importação das telas da pasta src/screens
+import PontosColeta from "./src/screens/PontosColeta/PontosColeta";
+import Detalhes from "./src/screens/Detalhes/DetalhesPontosColeta";
+import TelaCadastroDoacao from "./src/screens/Cadastro/TelaCadastroDoacao";
+import TelaDoacoesCadastradas from "./src/screens/Doacoes/TelaDoacoesCadastradas";
+import DetalhesDoacao from "./src/screens/Detalhes/DetalhesDoacao";
+import { PONTOS_MOCK } from "./src/screens/PontosColeta/PontosColeta";
+import { RootStackParamList } from "./src/types/navigation";
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   return (

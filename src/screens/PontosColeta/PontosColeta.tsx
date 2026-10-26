@@ -7,14 +7,14 @@ import {
   FlatList,
   TextInput,
 } from "react-native";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { Ponto } from "../../types/ponto";
+import { RootStackParamList } from "../../types/navigation";
 
-export type Ponto = {
-  id: string;
-  nome: string;
-  endereco: string;
-  diasHorarios: string;
-  recebeDistribui: string;
-};
+// Reexporta o tipo para manter compatibilidade com quem importava daqui
+export type { Ponto };
+
+type Props = NativeStackScreenProps<RootStackParamList, "PontosColeta">;
 
 export const PONTOS_MOCK: Ponto[] = [
   {
@@ -68,7 +68,7 @@ export const PONTOS_MOCK: Ponto[] = [
   },
 ];
 
-export default function PontosColeta({ navigation }: any) {
+export default function PontosColeta({ navigation }: Props) {
   // Armazena o texto digitado
   const [busca, setBusca] = useState("");
 

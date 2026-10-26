@@ -40,7 +40,7 @@ yarn-error.*
 /ios
 /android
 
-# Ignore all files in the root of the project except for the ones in the "backend/api" folder
+# Ignore all files in the root of the project except for the ones in the "api" folder
 HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar

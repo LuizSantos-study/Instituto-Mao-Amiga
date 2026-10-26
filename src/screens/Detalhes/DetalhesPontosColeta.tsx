@@ -1,11 +1,14 @@
 import React from "react";
 import { StyleSheet, Text, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ponto } from "../PontosColeta/PontosColeta";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../../types/navigation";
 
-export default function DetalhesPontosColeta({ route }: any) {
+type Props = NativeStackScreenProps<RootStackParamList, "DetalhesPontosColeta">;
+
+export default function DetalhesPontosColeta({ route }: Props) {
   // Extrai o objeto ponto enviado como parâmetro
-  const { ponto }: { ponto: Ponto } = route.params;
+  const { ponto } = route.params;
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>

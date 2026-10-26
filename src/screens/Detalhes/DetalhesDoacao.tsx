@@ -8,11 +8,14 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Doacao, excluirDoacao } from "../../services/doacoesStorage";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { excluirDoacao } from "../../services/doacoesStorage";
+import { RootStackParamList } from "../../types/navigation";
 
-export default function DetalhesDoacao({ route, navigation }: any) {
-  const { doacao, onExcluir }: { doacao: Doacao; onExcluir?: (id: string) => void } =
-    route.params;
+type Props = NativeStackScreenProps<RootStackParamList, "DetalhesDoacao">;
+
+export default function DetalhesDoacao({ route, navigation }: Props) {
+  const { doacao, onExcluir } = route.params;
 
   function confirmarExclusao() {
     Alert.alert(

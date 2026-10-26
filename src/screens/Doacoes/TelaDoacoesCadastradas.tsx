@@ -9,13 +9,15 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  Doacao,
-  listarDoacoes,
-} from "../../services/doacoesStorage";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { listarDoacoes } from "../../services/doacoesStorage";
+import { Doacao } from "../../types/doacao";
+import { RootStackParamList } from "../../types/navigation";
 import ItemDoacao from "./ItemDoacao";
 
-export default function TelaDoacoesCadastradas({ navigation }: any) {
+type Props = NativeStackScreenProps<RootStackParamList, "DoacoesCadastradas">;
+
+export default function TelaDoacoesCadastradas({ navigation }: Props) {
   const [doacoes, setDoacoes] = useState<Doacao[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [buscaTipo, setBuscaTipo] = useState("");

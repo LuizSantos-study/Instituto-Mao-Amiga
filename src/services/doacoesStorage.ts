@@ -1,16 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Doacao, NovaDoacaoPayload } from "../types/doacao";
 
-export interface Doacao {
-  id: string;
-  tipoItem: string;
-  quantidade: number;
-  pontoId: string;
-  pontoNome: string;
-  criadoEm: string;
-  dataRegistro?: string; // Suporte a retrocompatibilidade com registros anteriores
-}
-
-export type NovaDoacaoPayload = Omit<Doacao, "id" | "criadoEm" | "dataRegistro">;
+// Reexporta os tipos para manter compatibilidade com quem importava daqui
+export type { Doacao, NovaDoacaoPayload };
 
 const STORAGE_KEY = "@instituto_mao_amiga:doacoes";
 
@@ -23,7 +15,7 @@ export async function listarDoacoes(): Promise<Doacao[]> {
     if (!dados) {
       return [];
     }
-    const parsed = JSON.parse(dados) as any[];
+    const parsed = JSON.parse(dados) as Doacao[];
     // Garante que registros legados com dataRegistro possuam criadoEm
     return parsed.map((item) => ({
       ...item,

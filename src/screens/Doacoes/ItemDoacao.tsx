@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Doacao } from "../../services/doacoesStorage";
+import { Doacao } from "../../types/doacao";
 
 interface ItemDoacaoProps {
   item: Doacao;
