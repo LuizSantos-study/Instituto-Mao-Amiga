@@ -3,13 +3,11 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 
-// Importação das telas da pasta src/screens
 import PontosColeta from "./src/screens/PontosColeta/PontosColeta";
-import Detalhes from "./src/screens/Detalhes/DetalhesPontosColeta";
+import DetalhesPontosColeta from "./src/screens/Detalhes/DetalhesPontosColeta";
 import TelaCadastroDoacao from "./src/screens/Cadastro/TelaCadastroDoacao";
 import TelaDoacoesCadastradas from "./src/screens/Doacoes/TelaDoacoesCadastradas";
 import DetalhesDoacao from "./src/screens/Detalhes/DetalhesDoacao";
-import { PONTOS_MOCK } from "./src/screens/PontosColeta/PontosColeta";
 import { RootStackParamList } from "./src/types/navigation";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -25,14 +23,14 @@ export default function App() {
         />
         <Stack.Screen
           name="DetalhesPontosColeta"
-          component={Detalhes}
+          component={DetalhesPontosColeta}
           options={{ title: "Detalhes do Ponto" }}
         />
-        <Stack.Screen name="CadastroDoacao" options={{ title: "Nova Doação" }}>
-          {(props) => (
-            <TelaCadastroDoacao {...props} pontosDisponiveis={PONTOS_MOCK} />
-          )}
-        </Stack.Screen>
+        <Stack.Screen
+          name="CadastroDoacao"
+          component={TelaCadastroDoacao}
+          options={{ title: "Nova Doação" }}
+        />
         <Stack.Screen
           name="DoacoesCadastradas"
           component={TelaDoacoesCadastradas}

@@ -16,9 +16,11 @@ export async function listarDoacoes(): Promise<Doacao[]> {
       return [];
     }
     const parsed = JSON.parse(dados) as Doacao[];
-    // Garante que registros legados com dataRegistro possuam criadoEm
+    // Garante que registros legados possuam pontoDestino e criadoEm preenchidos
     return parsed.map((item) => ({
       ...item,
+      pontoDestino: item.pontoDestino || item.pontoNome || "",
+      pontoNome: item.pontoNome || item.pontoDestino || "",
       criadoEm: item.criadoEm || item.dataRegistro || "",
     })) as Doacao[];
   } catch (error) {
@@ -43,6 +45,8 @@ export async function salvarDoacao(
   const novaDoacao: Doacao = {
     id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     ...payload,
+    pontoDestino: payload.pontoDestino || payload.pontoNome || "",
+    pontoNome: payload.pontoNome || payload.pontoDestino || "",
     criadoEm: dataFormatada,
     dataRegistro: dataFormatada,
   };

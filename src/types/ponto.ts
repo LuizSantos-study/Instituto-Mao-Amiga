@@ -1,19 +1,21 @@
 /**
  * Ponto de coleta/distribuição exibido no app.
- * (Será alinhado campo a campo com o record de resposta da API na integração.)
+ * Espelha campo a campo o record PontoResponse da API Spring Boot.
  */
-export type Ponto = {
-  id: string;
+export interface Ponto {
+  id: number;
   nome: string;
   endereco: string;
   diasHorarios: string;
   recebeDistribui: string;
-};
+  latitude: number;
+  longitude: number;
+}
 
 /**
  * Versão resumida do ponto usada na seleção de destino do cadastro de doação.
  */
 export interface PontoColeta {
-  id: string;
+  id: number;
   nome: string;
 }

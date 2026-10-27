@@ -34,7 +34,9 @@ export const ItemDoacao = React.memo(function ItemDoacao({
 
       <View style={styles.linhaInfo}>
         <Text style={styles.labelInfo}>Ponto de Coleta:</Text>
-        <Text style={styles.valorPonto}>📍 {item.pontoNome}</Text>
+        <Text style={styles.valorPonto}>
+          📍 {item.pontoDestino || item.pontoNome}
+        </Text>
       </View>
 
       {(item.criadoEm || item.dataRegistro) && (

@@ -64,7 +64,9 @@ export default function DetalhesDoacao({ route, navigation }: Props) {
 
             <View style={styles.secao}>
               <Text style={styles.label}>Ponto de Coleta / Destino</Text>
-              <Text style={styles.valor}>📍 {doacao.pontoNome}</Text>
+              <Text style={styles.valor}>
+                📍 {doacao.pontoDestino || doacao.pontoNome}
+              </Text>
             </View>
 
             {(doacao.criadoEm || doacao.dataRegistro) && (

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   StyleSheet,
   Text,
@@ -6,78 +6,55 @@ import {
   TouchableOpacity,
   FlatList,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ponto } from "../../types/ponto";
 import { RootStackParamList } from "../../types/navigation";
+import { listarPontos } from "../../services/pontosService";
 
 // Reexporta o tipo para manter compatibilidade com quem importava daqui
 export type { Ponto };
 
 type Props = NativeStackScreenProps<RootStackParamList, "PontosColeta">;
 
-export const PONTOS_MOCK: Ponto[] = [
-  {
-    id: "1",
-    nome: "Mercado Central",
-    endereco: "Rua das Flores, 120 - Centro",
-    diasHorarios: "Seg a Sex, 8h às 17h",
-    recebeDistribui: "Recebe alimentos não perecíveis",
-  },
-  {
-    id: "2",
-    nome: "Feira do Bairro Sul",
-    endereco: "Av. Brasil, 850 - Bairro Sul",
-    diasHorarios: "Sáb, 7h às 12h",
-    recebeDistribui: "Recebe frutas e verduras",
-  },
-  {
-    id: "3",
-    nome: "Centro Comunitário Esperança",
-    endereco: "Rua da Paz, 45 - Vila Nova",
-    diasHorarios: "Ter e Qui, 14h às 18h",
-    recebeDistribui: "Distribui roupas e cobertores",
-  },
-  {
-    id: "4",
-    nome: "Paróquia de Santo Antônio",
-    endereco: "Praça da Matriz, 10 - Jardim América",
-    diasHorarios: "Qua e Sex, 9h às 16h",
-    recebeDistribui: "Recebe roupas, calçados e cestas básicas",
-  },
-  {
-    id: "5",
-    nome: "Escola Municipal Paulo Freire",
-    endereco: "Rua dos Estudantes, 300 - Bairro Novo",
-    diasHorarios: "Seg a Sex, 7h30 às 11h30",
-    recebeDistribui: "Recebe material escolar e livros didáticos",
-  },
-  {
-    id: "6",
-    nome: "Galpão Solidário Mão Amiga",
-    endereco: "Av. das Indústrias, 1500 - Distrito Industrial",
-    diasHorarios: "Seg a Sáb, 8h às 18h",
-    recebeDistribui: "Recebe e distribui móveis e eletrodomésticos",
-  },
-  {
-    id: "7",
-    nome: "Posto de Saúde Central",
-    endereco: "Rua Marechal Deodoro, 50 - Centro",
-    diasHorarios: "Seg a Sex, 8h às 16h",
-    recebeDistribui: "Recebe fraldas descartáveis e itens de higiene",
-  },
-];
-
 export default function PontosColeta({ navigation }: Props) {
-  // Armazena o texto digitado
+  const [pontos, setPontos] = useState<Ponto[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
 
-  // Filtra a lista de forma dinamica sempre que o termo 'busca' mudar
+  const carregarPontos = useCallback(async () => {
+    try {
+      setCarregando(true);
+      setErro(null);
+      const dados = await listarPontos();
+      setPontos(dados);
+    } catch (error) {
+      const mensagem =
+        error instanceof Error
+          ? error.message
+          : "Não foi possível carregar os pontos de coleta. Verifique se a API está ligada.";
+      setErro(mensagem);
+    } finally {
+      setCarregando(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    carregarPontos();
+  }, [carregarPontos]);
+
+  // Filtra a lista dinamicamente sempre que o termo 'busca' ou os pontos mudarem
   const pontosFiltrados = useMemo(() => {
-    return PONTOS_MOCK.filter((ponto) =>
-      ponto.nome.toLowerCase().includes(busca.toLowerCase()),
+    const termo = busca.trim().toLowerCase();
+    if (!termo) {
+      return pontos;
+    }
+    return pontos.filter((ponto) =>
+      ponto.nome.toLowerCase().includes(termo),
     );
-  }, [busca]);
+  }, [pontos, busca]);
 
   return (
     <View style={styles.container}>
@@ -92,25 +69,56 @@ export default function PontosColeta({ navigation }: Props) {
         autoCorrect={false}
       />
 
-      <FlatList
-        data={pontosFiltrados}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        keyboardDismissMode="on-drag"
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
+      {carregando ? (
+        <View style={styles.feedbackContainer}>
+          <ActivityIndicator size="large" color="#0284c7" />
+          <Text style={styles.feedbackTexto}>
+            Carregando pontos de coleta...
+          </Text>
+        </View>
+      ) : erro ? (
+        <View style={styles.erroContainer}>
+          <Text style={styles.erroTitulo}>Erro ao carregar pontos</Text>
+          <Text style={styles.erroTexto}>{erro}</Text>
           <TouchableOpacity
-            style={styles.card}
-            onPress={() =>
-              navigation.navigate("DetalhesPontosColeta", { ponto: item })
-            }
-            activeOpacity={0.7}
+            style={styles.botaoTentarNovamente}
+            onPress={carregarPontos}
+            activeOpacity={0.8}
           >
-            <Text style={styles.nome}>{item.nome}</Text>
+            <Text style={styles.botaoTentarNovamenteTexto}>
+              Tentar novamente
+            </Text>
           </TouchableOpacity>
-        )}
-      />
+        </View>
+      ) : (
+        <FlatList
+          data={pontosFiltrados}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={styles.listContainer}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.vazioContainer}>
+              <Text style={styles.vazioTexto}>
+                Nenhum ponto de coleta encontrado.
+              </Text>
+            </View>
+          }
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() =>
+                navigation.navigate("DetalhesPontosColeta", { id: item.id })
+              }
+              activeOpacity={0.7}
+            >
+              <Text style={styles.nome}>{item.nome}</Text>
+            </TouchableOpacity>
+          )}
+        />
+      )}
+
       <View style={styles.botoesContainer}>
         <TouchableOpacity
           style={styles.botaoIrParaCadastro}
@@ -139,7 +147,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
     paddingTop: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   titulo: {
     fontSize: 18,
@@ -161,6 +169,62 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
     minHeight: 48,
+  },
+  feedbackContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  feedbackTexto: {
+    marginTop: 12,
+    fontSize: 15,
+    color: "#555",
+  },
+  erroContainer: {
+    flex: 1,
+    width: "92%",
+    maxWidth: 600,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  erroTitulo: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#dc2626",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  erroTexto: {
+    fontSize: 15,
+    color: "#444",
+    textAlign: "center",
+    marginBottom: 16,
+    lineHeight: 22,
+  },
+  botaoTentarNovamente: {
+    backgroundColor: "#0284c7",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    minHeight: 48,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  botaoTentarNovamenteTexto: {
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: "bold",
+  },
+  vazioContainer: {
+    paddingVertical: 32,
+    alignItems: "center",
+  },
+  vazioTexto: {
+    fontSize: 15,
+    color: "#666",
+    textAlign: "center",
   },
   listContainer: {
     paddingHorizontal: 16,
