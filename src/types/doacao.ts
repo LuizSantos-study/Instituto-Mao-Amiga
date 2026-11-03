@@ -1,16 +1,19 @@
+import { Page, PageMetadata } from "./ponto";
+
+export type { Page, PageMetadata };
+
 /**
- * Formato da doação conforme especificado no Projeto N1:
- * { id, tipoItem, quantidade, pontoDestino, criadoEm }, com quantidade como número.
+ * Formato da doação retornado pela API Spring Boot (`/doacoes`).
  */
 export interface Doacao {
-  id: string;
+  doacaoID: string;
   tipoItem: string;
   quantidade: number;
   pontoDestino: string;
   criadoEm: string;
-  pontoId?: number | string; // Suporte opcional de referência ao ID do ponto
-  pontoNome?: string; // Suporte a retrocompatibilidade com registros anteriores
-  dataRegistro?: string; // Suporte a retrocompatibilidade com registros anteriores
+  pontoID?: string;
+  pontoNome?: string;
+  dataRegistro?: string;
 }
 
-export type NovaDoacaoPayload = Omit<Doacao, "id" | "criadoEm" | "dataRegistro">;
+export type NovaDoacaoPayload = Omit<Doacao, "doacaoID" | "criadoEm" | "dataRegistro">;

@@ -24,17 +24,38 @@ export class ApiError extends Error {
   }
 }
 
+function normalizarUrl(endpoint: string): string {
+  const caminho = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  return `${API_BASE_URL}${caminho}`;
+}
+
+async function tratarResposta<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new ApiError("Registro não encontrado.", 404);
+    }
+
+    throw new ApiError(
+      `Erro ao consultar a API (HTTP ${response.status}).`,
+      response.status,
+    );
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const data = (await response.json()) as T;
+  return data;
+}
+
 /**
  * Realiza uma requisição GET para a API e converte o resultado JSON para o tipo esperado.
- * Este é o único arquivo do aplicativo que invoca `fetch` diretamente.
  */
 export async function apiGet<T>(endpoint: string): Promise<T> {
-  const caminho = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-  const url = `${API_BASE_URL}${caminho}`;
-
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await fetch(normalizarUrl(endpoint), {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -47,17 +68,81 @@ export async function apiGet<T>(endpoint: string): Promise<T> {
     );
   }
 
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new ApiError("Ponto não encontrado.", 404);
-    }
+  return tratarResposta<T>(response);
+}
 
+/**
+ * Realiza uma requisição POST para a API enviando corpo JSON.
+ */
+export async function apiPost<T, B = unknown>(
+  endpoint: string,
+  body: B,
+): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(normalizarUrl(endpoint), {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
     throw new ApiError(
-      `Erro ao consultar a API (HTTP ${response.status}).`,
-      response.status,
+      "Não foi possível conectar à API do Instituto Mão Amiga. Verifique se o servidor está em execução.",
+      0,
     );
   }
 
-  const data = (await response.json()) as T;
-  return data;
+  return tratarResposta<T>(response);
+}
+
+/**
+ * Realiza uma requisição PUT para a API enviando corpo JSON.
+ */
+export async function apiPut<T, B = unknown>(
+  endpoint: string,
+  body: B,
+): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(normalizarUrl(endpoint), {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new ApiError(
+      "Não foi possível conectar à API do Instituto Mão Amiga. Verifique se o servidor está em execução.",
+      0,
+    );
+  }
+
+  return tratarResposta<T>(response);
+}
+
+/**
+ * Realiza uma requisição DELETE para a API.
+ */
+export async function apiDelete(endpoint: string): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(normalizarUrl(endpoint), {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+  } catch {
+    throw new ApiError(
+      "Não foi possível conectar à API do Instituto Mão Amiga. Verifique se o servidor está em execução.",
+      0,
+    );
+  }
+
+  await tratarResposta<void>(response);
 }

@@ -6,8 +6,8 @@ import { Ponto } from "./ponto";
  */
 export type RootStackParamList = {
   PontosColeta: undefined;
-  DetalhesPontosColeta: { id: number; ponto?: Ponto };
+  DetalhesPontosColeta: { pontoID: string; ponto?: Ponto };
   CadastroDoacao: { doacaoParaEditar?: Doacao } | undefined;
   DoacoesCadastradas: undefined;
-  DetalhesDoacao: { doacao: Doacao; onExcluir?: (id: string) => void };
+  DetalhesDoacao: { doacaoID: string; doacao?: Doacao; onExcluir?: (doacaoID: string) => void };
 };

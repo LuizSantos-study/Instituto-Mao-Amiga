@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   Text,
@@ -11,7 +11,7 @@ import {
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ponto } from "../../types/ponto";
 import { RootStackParamList } from "../../types/navigation";
-import { listarPontos } from "../../services/pontosService";
+import { filtrarPontos } from "../../services/pontosService";
 
 // Reexporta o tipo para manter compatibilidade com quem importava daqui
 export type { Ponto };
@@ -24,12 +24,12 @@ export default function PontosColeta({ navigation }: Props) {
   const [erro, setErro] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
 
-  const carregarPontos = useCallback(async () => {
+  const carregarPontos = useCallback(async (termoBusca?: string) => {
     try {
       setCarregando(true);
       setErro(null);
-      const dados = await listarPontos();
-      setPontos(dados);
+      const resposta = await filtrarPontos(termoBusca);
+      setPontos(resposta.content);
     } catch (error) {
       const mensagem =
         error instanceof Error
@@ -42,19 +42,15 @@ export default function PontosColeta({ navigation }: Props) {
   }, []);
 
   useEffect(() => {
-    carregarPontos();
-  }, [carregarPontos]);
+    carregarPontos(busca);
+  }, [busca, carregarPontos]);
 
-  // Filtra a lista dinamicamente sempre que o termo 'busca' ou os pontos mudarem
-  const pontosFiltrados = useMemo(() => {
-    const termo = busca.trim().toLowerCase();
-    if (!termo) {
-      return pontos;
-    }
-    return pontos.filter((ponto) =>
-      ponto.nome.toLowerCase().includes(termo),
-    );
-  }, [pontos, busca]);
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      carregarPontos(busca);
+    });
+    return unsubscribe;
+  }, [navigation, busca, carregarPontos]);
 
   return (
     <View style={styles.container}>
@@ -82,7 +78,7 @@ export default function PontosColeta({ navigation }: Props) {
           <Text style={styles.erroTexto}>{erro}</Text>
           <TouchableOpacity
             style={styles.botaoTentarNovamente}
-            onPress={carregarPontos}
+            onPress={() => carregarPontos(busca)}
             activeOpacity={0.8}
           >
             <Text style={styles.botaoTentarNovamenteTexto}>
@@ -92,8 +88,8 @@ export default function PontosColeta({ navigation }: Props) {
         </View>
       ) : (
         <FlatList
-          data={pontosFiltrados}
-          keyExtractor={(item) => String(item.id)}
+          data={pontos}
+          keyExtractor={(item) => item.pontoID}
           contentContainerStyle={styles.listContainer}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
@@ -109,7 +105,9 @@ export default function PontosColeta({ navigation }: Props) {
             <TouchableOpacity
               style={styles.card}
               onPress={() =>
-                navigation.navigate("DetalhesPontosColeta", { id: item.id })
+                navigation.navigate("DetalhesPontosColeta", {
+                  pontoID: item.pontoID,
+                })
               }
               activeOpacity={0.7}
             >

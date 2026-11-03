@@ -1,5 +1,6 @@
 package com.luizsantos.institutomaoamiga;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -8,11 +9,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 @SpringBootTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class InstitutomaoamigaApplicationTests {
 
     @Autowired
@@ -40,6 +43,17 @@ class InstitutomaoamigaApplicationTests {
     }
 
     @Test
+    void deveFiltrarPontosIgnorandoMaiusculasEMinusculasEFuncionarSemFiltro() throws Exception {
+        mockMvc.perform(get("/pontos/filtro"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(10));
+
+        mockMvc.perform(get("/pontos/filtro").param("nome", "mErCaDo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(3));
+    }
+
+    @Test
     void deveLimitarTamanhoMaximoDaPaginaEm50() throws Exception {
         mockMvc.perform(get("/pontos").param("size", "200"))
                 .andExpect(status().isOk())
@@ -50,7 +64,7 @@ class InstitutomaoamigaApplicationTests {
     void deveBuscarPontoPorIdComCoordenadas() throws Exception {
         mockMvc.perform(get("/pontos/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.pontoID").value("1"))
                 .andExpect(jsonPath("$.nome").isNotEmpty())
                 .andExpect(jsonPath("$.endereco").isNotEmpty())
                 .andExpect(jsonPath("$.diasHorarios").isNotEmpty())
@@ -62,6 +76,41 @@ class InstitutomaoamigaApplicationTests {
     @Test
     void deveRetornar404QuandoPontoNaoExistir() throws Exception {
         mockMvc.perform(get("/pontos/9999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deveExcluirPontoPorId() throws Exception {
+        mockMvc.perform(delete("/pontos/1"))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/pontos/1"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deveFiltrarDoacoesIgnorandoMaiusculasEMinusculasEFuncionarSemFiltro() throws Exception {
+        mockMvc.perform(get("/doacoes/filtro"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(3));
+
+        mockMvc.perform(get("/doacoes/filtro").param("tipoItem", "rOuPaS"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].doacaoID").isString());
+    }
+
+    @Test
+    void deveBuscarEExcluirDoacaoPorId() throws Exception {
+        mockMvc.perform(get("/doacoes/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.doacaoID").value("1"))
+                .andExpect(jsonPath("$.tipoItem").value("Alimentos"));
+
+        mockMvc.perform(delete("/doacoes/1"))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/doacoes/1"))
                 .andExpect(status().isNotFound());
     }
 }

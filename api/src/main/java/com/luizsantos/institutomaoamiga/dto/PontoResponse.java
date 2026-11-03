@@ -3,7 +3,7 @@ package com.luizsantos.institutomaoamiga.dto;
 import com.luizsantos.institutomaoamiga.model.Ponto;
 
 public record PontoResponse(
-        Long id,
+        String pontoID,
         String nome,
         String endereco,
         String diasHorarios,
@@ -13,7 +13,7 @@ public record PontoResponse(
 
     public static PontoResponse fromEntity(Ponto ponto) {
         return new PontoResponse(
-                ponto.getId(),
+                String.valueOf(ponto.getId()),
                 ponto.getNome(),
                 ponto.getEndereco(),
                 ponto.getDiasHorarios(),

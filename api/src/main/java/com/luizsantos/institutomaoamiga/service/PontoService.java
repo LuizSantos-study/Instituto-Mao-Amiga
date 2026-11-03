@@ -28,12 +28,29 @@ public class PontoService {
         return pontoRepository.findAll(pageableSeguro).map(PontoResponse::fromEntity);
     }
 
+    public Page<PontoResponse> filtrar(String nome, Pageable pageable) {
+        Pageable pageableSeguro = limitarTamanhoPagina(pageable);
+        String termo = (nome == null) ? "" : nome.trim();
+        return pontoRepository.findByNomeContainingIgnoreCase(termo, pageableSeguro)
+                .map(PontoResponse::fromEntity);
+    }
+
     public PontoResponse buscarPorId(Long id) {
         return pontoRepository.findById(id)
                 .map(PontoResponse::fromEntity)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Ponto de coleta nao encontrado para o id: " + id));
+    }
+
+    @Transactional
+    public void excluir(Long id) {
+        if (!pontoRepository.existsById(id)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Ponto de coleta nao encontrado para o id: " + id);
+        }
+        pontoRepository.deleteById(id);
     }
 
     private Pageable limitarTamanhoPagina(Pageable pageable) {

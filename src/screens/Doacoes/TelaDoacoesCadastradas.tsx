@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { listarDoacoes } from "../../services/doacoesStorage";
+import { filtrarDoacoes } from "../../services/doacoesStorage";
 import { Doacao } from "../../types/doacao";
 import { RootStackParamList } from "../../types/navigation";
 import ItemDoacao from "./ItemDoacao";
@@ -20,33 +20,36 @@ type Props = NativeStackScreenProps<RootStackParamList, "DoacoesCadastradas">;
 export default function TelaDoacoesCadastradas({ navigation }: Props) {
   const [doacoes, setDoacoes] = useState<Doacao[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
   const [buscaTipo, setBuscaTipo] = useState("");
 
-  async function carregarDoacoes() {
-    setCarregando(true);
-    const dados = await listarDoacoes();
-    setDoacoes(dados);
-    setCarregando(false);
-  }
+  const carregarDoacoes = useCallback(async (termo?: string) => {
+    try {
+      setCarregando(true);
+      setErro(null);
+      const resposta = await filtrarDoacoes(termo);
+      setDoacoes(resposta.content);
+    } catch (error) {
+      const mensagem =
+        error instanceof Error
+          ? error.message
+          : "Não foi possível carregar as doações da API.";
+      setErro(mensagem);
+    } finally {
+      setCarregando(false);
+    }
+  }, []);
 
   useEffect(() => {
-    carregarDoacoes();
+    carregarDoacoes(buscaTipo);
+  }, [buscaTipo, carregarDoacoes]);
+
+  useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
-      carregarDoacoes();
+      carregarDoacoes(buscaTipo);
     });
     return unsubscribe;
-  }, [navigation]);
-
-  // Filtro calculado dinamicamente a partir do termo digitado sem alterar os dados salvos nem duplicar estado
-  const doacoesFiltradas = useMemo(() => {
-    if (!buscaTipo.trim()) {
-      return doacoes;
-    }
-    const termo = buscaTipo.trim().toLowerCase();
-    return doacoes.filter((item) =>
-      item.tipoItem.toLowerCase().includes(termo),
-    );
-  }, [doacoes, buscaTipo]);
+  }, [navigation, buscaTipo, carregarDoacoes]);
 
   // Resumo dinâmico com o total geral e a quantidade somada por tipo de item (ordenado do maior para o menor)
   const { totalGeralRegistros, totalGeralQuantidade, totaisPorTipo } =
@@ -76,10 +79,10 @@ export default function TelaDoacoesCadastradas({ navigation }: Props) {
       <View style={styles.wrapper}>
         <Text style={styles.titulo}>Minhas doações</Text>
         <Text style={styles.subtitulo}>
-          Histórico de itens registrados localmente no aparelho.
+          Histórico de itens consultados diretamente na API.
         </Text>
 
-        {!carregando && doacoes.length > 0 && (
+        {!carregando && !erro && doacoes.length > 0 && (
           <View style={styles.cardResumo}>
             <View style={styles.resumoHeader}>
               <Text style={styles.resumoTitulo}>📊 Resumo Geral</Text>
@@ -96,7 +99,8 @@ export default function TelaDoacoesCadastradas({ navigation }: Props) {
             </Text>
             <View style={styles.resumoTiposContainer}>
               {totaisPorTipo.map(({ tipo, quantidade }) => {
-                const ativo = buscaTipo.trim().toLowerCase() === tipo.toLowerCase();
+                const ativo =
+                  buscaTipo.trim().toLowerCase() === tipo.toLowerCase();
                 return (
                   <TouchableOpacity
                     key={tipo}
@@ -136,16 +140,29 @@ export default function TelaDoacoesCadastradas({ navigation }: Props) {
             <ActivityIndicator size="large" color="#0284c7" />
             <Text style={styles.loadingTexto}>Carregando doações...</Text>
           </View>
+        ) : erro ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyTitulo}>Erro ao carregar doações</Text>
+            <Text style={styles.emptySubtitulo}>{erro}</Text>
+            <TouchableOpacity
+              style={styles.botaoCadastrarVazio}
+              onPress={() => carregarDoacoes(buscaTipo)}
+            >
+              <Text style={styles.botaoCadastrarVazioTexto}>
+                Tentar novamente
+              </Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <FlatList
-            data={doacoesFiltradas}
-            keyExtractor={(item) => item.id}
+            data={doacoes}
+            keyExtractor={(item) => item.doacaoID}
             contentContainerStyle={styles.listContainer}
             showsVerticalScrollIndicator={false}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
             ListEmptyComponent={
-              doacoes.length === 0 ? (
+              buscaTipo.trim() === "" ? (
                 <View style={styles.emptyContainer}>
                   <Text style={styles.emptyIcon}>📦</Text>
                   <Text style={styles.emptyTitulo}>
@@ -170,7 +187,8 @@ export default function TelaDoacoesCadastradas({ navigation }: Props) {
                     Nenhuma doação encontrada
                   </Text>
                   <Text style={styles.emptySubtitulo}>
-                    Não encontramos itens com o tipo "{buscaTipo}". Tente outro termo.
+                    Não encontramos itens com o tipo "{buscaTipo}". Tente outro
+                    termo.
                   </Text>
                   <TouchableOpacity
                     style={styles.botaoLimparBusca}
@@ -188,10 +206,10 @@ export default function TelaDoacoesCadastradas({ navigation }: Props) {
                 item={item}
                 onPress={(doacao) =>
                   navigation.navigate("DetalhesDoacao", {
-                    doacao,
+                    doacaoID: doacao.doacaoID,
                     onExcluir: (idExcluido: string) => {
                       setDoacoes((prev) =>
-                        prev.filter((d) => d.id !== idExcluido),
+                        prev.filter((d) => d.doacaoID !== idExcluido),
                       );
                     },
                   })

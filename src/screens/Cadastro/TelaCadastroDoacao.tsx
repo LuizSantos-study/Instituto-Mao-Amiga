@@ -47,9 +47,9 @@ export default function TelaCadastroDoacao({
   const [quantidade, setQuantidade] = useState(
     doacaoParaEditar ? String(doacaoParaEditar.quantidade) : "",
   );
-  const [pontoSelecionadoId, setPontoSelecionadoId] = useState<number | null>(
-    doacaoParaEditar?.pontoId !== undefined
-      ? Number(doacaoParaEditar.pontoId)
+  const [pontoSelecionadoId, setPontoSelecionadoId] = useState<string | null>(
+    doacaoParaEditar?.pontoID !== undefined
+      ? String(doacaoParaEditar.pontoID)
       : null,
   );
   const [erro, setErro] = useState("");
@@ -68,12 +68,12 @@ export default function TelaCadastroDoacao({
           doacaoParaEditar.pontoDestino || doacaoParaEditar.pontoNome || "";
         const pontoCorrespondente = dados.find(
           (p) =>
-            (doacaoParaEditar.pontoId !== undefined &&
-              p.id === Number(doacaoParaEditar.pontoId)) ||
+            (doacaoParaEditar.pontoID !== undefined &&
+              p.pontoID === String(doacaoParaEditar.pontoID)) ||
             p.nome.toLowerCase() === destinoAnterior.toLowerCase(),
         );
         if (pontoCorrespondente) {
-          setPontoSelecionadoId(pontoCorrespondente.id);
+          setPontoSelecionadoId(pontoCorrespondente.pontoID);
         }
       }
     } catch (error) {
@@ -104,8 +104,8 @@ export default function TelaCadastroDoacao({
     if (doacaoParaEditar) {
       setTipoItem(doacaoParaEditar.tipoItem);
       setQuantidade(String(doacaoParaEditar.quantidade));
-      if (doacaoParaEditar.pontoId !== undefined) {
-        setPontoSelecionadoId(Number(doacaoParaEditar.pontoId));
+      if (doacaoParaEditar.pontoID !== undefined) {
+        setPontoSelecionadoId(String(doacaoParaEditar.pontoID));
       }
       navigation.setOptions({ title: "Editar Doação" });
     } else {
@@ -145,7 +145,9 @@ export default function TelaCadastroDoacao({
       return;
     }
 
-    const ponto = pontosDisponiveis.find((p) => p.id === pontoSelecionadoId);
+    const ponto = pontosDisponiveis.find(
+      (p) => p.pontoID === pontoSelecionadoId,
+    );
     if (!ponto) {
       setErro("Ponto de destino selecionado não foi encontrado.");
       return;
@@ -157,11 +159,11 @@ export default function TelaCadastroDoacao({
 
       if (modoEdicao && doacaoParaEditar) {
         const doacaoAtualizada: Doacao = {
-          id: doacaoParaEditar.id,
+          doacaoID: doacaoParaEditar.doacaoID,
           tipoItem: tipoItem.trim(),
           quantidade: qtdNumerica,
           pontoDestino: ponto.nome,
-          pontoId: ponto.id,
+          pontoID: ponto.pontoID,
           pontoNome: ponto.nome,
           criadoEm:
             doacaoParaEditar.criadoEm || doacaoParaEditar.dataRegistro || "",
@@ -177,12 +179,12 @@ export default function TelaCadastroDoacao({
           tipoItem: tipoItem.trim(),
           quantidade: qtdNumerica,
           pontoDestino: ponto.nome,
-          pontoId: ponto.id,
+          pontoID: ponto.pontoID,
           pontoNome: ponto.nome,
         });
 
         Keyboard.dismiss();
-        alert("Doação registrada com sucesso no dispositivo!");
+        alert("Doação registrada com sucesso!");
 
         // Limpa os campos do formulário
         setTipoItem("");
@@ -194,8 +196,8 @@ export default function TelaCadastroDoacao({
     } catch {
       setErro(
         modoEdicao
-          ? "Ocorreu um erro ao atualizar a doação localmente."
-          : "Ocorreu um erro ao salvar a doação localmente.",
+          ? "Ocorreu um erro ao atualizar a doação na API."
+          : "Ocorreu um erro ao salvar a doação na API.",
       );
     } finally {
       setSalvando(false);
@@ -259,18 +261,18 @@ export default function TelaCadastroDoacao({
               <View style={styles.pontosContainer}>
                 {pontosDisponiveis.map((ponto) => (
                   <TouchableOpacity
-                    key={ponto.id}
+                    key={ponto.pontoID}
                     style={[
                       styles.pontoOption,
-                      pontoSelecionadoId === ponto.id &&
+                      pontoSelecionadoId === ponto.pontoID &&
                         styles.pontoOptionSelected,
                     ]}
-                    onPress={() => setPontoSelecionadoId(ponto.id)}
+                    onPress={() => setPontoSelecionadoId(ponto.pontoID)}
                   >
                     <Text
                       style={[
                         styles.pontoOptionText,
-                        pontoSelecionadoId === ponto.id &&
+                        pontoSelecionadoId === ponto.pontoID &&
                           styles.pontoOptionTextSelected,
                       ]}
                     >

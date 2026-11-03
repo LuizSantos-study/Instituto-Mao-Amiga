@@ -9,3 +9,8 @@ INSERT INTO pontos (nome, endereco, dias_horarios, recebe_distribui, latitude, l
 ('Mercado Municipal da Rua 74', 'Rua 74, 329 - Setor Central, Goiânia - GO', 'Seg a Sáb, 8h às 17h', 'Distribui refeições e cestas de alimentos', -16.6684215, -49.2625903),
 ('Praça Universitária', 'Praça Universitária - Setor Leste Universitário, Goiânia - GO', 'Seg a Sex, 8h às 18h', 'Recebe material escolar e livros didáticos', -16.6770065, -49.2441191),
 ('Feira Morada do Sol', 'Rua Aurora - Setor Morada do Sol, Goiânia - GO', 'Dom, 6h às 12h', 'Recebe e distribui frutas, verduras e roupas', -16.6116131, -49.3196570);
+
+INSERT INTO doacoes (tipo_item, quantidade, ponto_destino, ponto_id, criado_em) VALUES
+('Alimentos', 10, 'Mercado Central de Goiânia', '1', '01/11/2026 às 14:30'),
+('Roupas', 15, 'Feira Hippie - Praça do Trabalhador', '2', '01/11/2026 às 16:00'),
+('Cestas Básicas', 5, 'Catedral Metropolitana de Goiânia', '6', '02/11/2026 às 09:15');

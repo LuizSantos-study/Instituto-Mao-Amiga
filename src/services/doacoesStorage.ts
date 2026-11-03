@@ -1,114 +1,93 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Doacao, NovaDoacaoPayload } from "../types/doacao";
+import { Doacao, NovaDoacaoPayload, Page } from "../types/doacao";
+import { apiDelete, apiGet, apiPost, apiPut, ApiError } from "./api";
 
 // Reexporta os tipos para manter compatibilidade com quem importava daqui
-export type { Doacao, NovaDoacaoPayload };
-
-const STORAGE_KEY = "@instituto_mao_amiga:doacoes";
+export type { Doacao, NovaDoacaoPayload, Page };
 
 /**
- * Recupera todas as doações salvas no AsyncStorage.
+ * Consulta `GET /doacoes/filtro` na API devolvendo a página `Page<Doacao>`.
+ * Ignora maiúsculas/minúsculas no back-end e funciona mesmo quando `tipoItem` está vazio.
  */
-export async function listarDoacoes(): Promise<Doacao[]> {
-  try {
-    const dados = await AsyncStorage.getItem(STORAGE_KEY);
-    if (!dados) {
-      return [];
-    }
-    const parsed = JSON.parse(dados) as Doacao[];
-    // Garante que registros legados possuam pontoDestino e criadoEm preenchidos
-    return parsed.map((item) => ({
-      ...item,
-      pontoDestino: item.pontoDestino || item.pontoNome || "",
-      pontoNome: item.pontoNome || item.pontoDestino || "",
-      criadoEm: item.criadoEm || item.dataRegistro || "",
-    })) as Doacao[];
-  } catch (error) {
-    console.error("Erro ao carregar doações do AsyncStorage:", error);
-    return [];
-  }
+export async function filtrarDoacoes(tipoItem?: string): Promise<Page<Doacao>> {
+  const termo = tipoItem?.trim() ?? "";
+  const query = termo ? `?tipoItem=${encodeURIComponent(termo)}` : "";
+  return apiGet<Page<Doacao>>(`/doacoes/filtro${query}`);
 }
 
 /**
- * Salva uma nova doação no AsyncStorage persistindo com as doações já existentes.
- * Garante ID único e data criadoEm.
+ * Recupera as doações diretamente da API (`/doacoes/filtro`) retornando `resposta.content`.
+ */
+export async function listarDoacoes(tipoItem?: string): Promise<Doacao[]> {
+  const resposta = await filtrarDoacoes(tipoItem);
+  return resposta.content;
+}
+
+/**
+ * Busca uma doação específica na API em `GET /doacoes/{id}` usando o `doacaoID`.
+ */
+export async function buscarDoacaoPorId(doacaoID: string): Promise<Doacao> {
+  return apiGet<Doacao>(`/doacoes/${encodeURIComponent(String(doacaoID))}`);
+}
+
+/**
+ * Verifica se o erro capturado corresponde a um HTTP 404 (doação não encontrada).
+ */
+export function isDoacaoNaoEncontrada(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 404;
+}
+
+/**
+ * Salva uma nova doação na API (`POST /doacoes`).
  */
 export async function salvarDoacao(
   payload: NovaDoacaoPayload,
 ): Promise<Doacao> {
-  const agora = new Date();
-  const dataFormatada =
-    agora.toLocaleDateString("pt-BR") +
-    " às " +
-    agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-
-  const novaDoacao: Doacao = {
-    id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-    ...payload,
+  return apiPost<Doacao>("/doacoes", {
+    tipoItem: payload.tipoItem,
+    quantidade: payload.quantidade,
     pontoDestino: payload.pontoDestino || payload.pontoNome || "",
-    pontoNome: payload.pontoNome || payload.pontoDestino || "",
-    criadoEm: dataFormatada,
-    dataRegistro: dataFormatada,
-  };
-
-  const doacoesAtuais = await listarDoacoes();
-  const listaAtualizada = [novaDoacao, ...doacoesAtuais];
-
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(listaAtualizada));
-  return novaDoacao;
+    pontoID: payload.pontoID ? String(payload.pontoID) : undefined,
+  });
 }
 
 /**
- * Recupera a doação mais recente salva no AsyncStorage.
+ * Recupera a doação mais recente cadastrada na API.
  */
 export async function obterUltimaDoacao(): Promise<Doacao | null> {
-  const doacoes = await listarDoacoes();
-  return doacoes.length > 0 ? doacoes[0] : null;
-}
-
-/**
- * Remove/exclui uma doação específica pelo id.
- */
-export async function excluirDoacao(id: string): Promise<Doacao[]> {
   try {
-    const doacoes = await listarDoacoes();
-    const filtradas = doacoes.filter((item) => item.id !== id);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filtradas));
-    return filtradas;
-  } catch (error) {
-    console.error("Erro ao excluir doação do AsyncStorage:", error);
-    return [];
+    const resposta = await filtrarDoacoes();
+    return resposta.content.length > 0 ? resposta.content[0] : null;
+  } catch {
+    return null;
   }
 }
 
 /**
- * Atualiza uma doação existente no AsyncStorage mantendo seu id original.
+ * Remove/exclui uma doação específica na API (`DELETE /doacoes/{id}`).
+ */
+export async function excluirDoacao(doacaoID: string): Promise<void> {
+  await apiDelete(`/doacoes/${encodeURIComponent(String(doacaoID))}`);
+}
+
+/**
+ * Atualiza uma doação existente na API (`PUT /doacoes/{id}`) mantendo seu `doacaoID`.
  */
 export async function atualizarDoacao(
   doacaoAtualizada: Doacao,
-): Promise<Doacao[]> {
-  try {
-    const doacoes = await listarDoacoes();
-    const listaAtualizada = doacoes.map((item) =>
-      item.id === doacaoAtualizada.id ? doacaoAtualizada : item,
-    );
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(listaAtualizada));
-    return listaAtualizada;
-  } catch (error) {
-    console.error("Erro ao atualizar doação no AsyncStorage:", error);
-    throw error;
-  }
-}
-
-/**
- * Limpa todo o histórico de doações no AsyncStorage.
- */
-export async function limparDoacoes(): Promise<void> {
-  try {
-    await AsyncStorage.removeItem(STORAGE_KEY);
-  } catch (error) {
-    console.error("Erro ao limpar doações do AsyncStorage:", error);
-  }
+): Promise<Doacao> {
+  return apiPut<Doacao>(
+    `/doacoes/${encodeURIComponent(String(doacaoAtualizada.doacaoID))}`,
+    {
+      tipoItem: doacaoAtualizada.tipoItem,
+      quantidade: doacaoAtualizada.quantidade,
+      pontoDestino:
+        doacaoAtualizada.pontoDestino || doacaoAtualizada.pontoNome || "",
+      pontoID: doacaoAtualizada.pontoID
+        ? String(doacaoAtualizada.pontoID)
+        : undefined,
+      criadoEm: doacaoAtualizada.criadoEm || doacaoAtualizada.dataRegistro,
+    },
+  );
 }
 
 // Aliases para manter compatibilidade
@@ -116,5 +95,4 @@ export const salvarDoacaoStorage = salvarDoacao;
 export const obterDoacoesStorage = listarDoacoes;
 export const obterUltimaDoacaoStorage = obterUltimaDoacao;
 export const removerDoacaoStorage = excluirDoacao;
-export const limparDoacoesStorage = limparDoacoes;
 export const atualizarDoacaoStorage = atualizarDoacao;

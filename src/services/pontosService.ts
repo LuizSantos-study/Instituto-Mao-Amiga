@@ -1,43 +1,32 @@
-import { Ponto } from "../types/ponto";
-import { apiGet, ApiError } from "./api";
+import { Page, PageMetadata, Ponto } from "../types/ponto";
+import { apiDelete, apiGet, ApiError } from "./api";
+
+export type { Page, PageMetadata };
+export type PageResponse<T> = Page<T>;
 
 /**
- * Metadados de paginação devolvidos pelo Spring Data (`serialization-mode=via-dto`).
- */
-export interface PageMetadata {
-  size: number;
-  number: number;
-  totalElements: number;
-  totalPages: number;
-}
-
-/**
- * Envelope de página do Spring Boot no formato `{ content, page }`.
- */
-export interface PageResponse<T> {
-  content: T[];
-  page: PageMetadata;
-}
-
-/**
- * Parâmetros opcionais de paginação e ordenação para `GET /pontos`.
+ * Parâmetros opcionais de filtro, paginação e ordenação para `/pontos` e `/pontos/filtro`.
  */
 export interface ListarPontosParams {
+  nome?: string;
   page?: number;
   size?: number;
   sort?: string;
 }
 
 /**
- * Monta a query string de paginação caso parâmetros tenham sido informados.
+ * Monta a query string de filtro e paginação caso parâmetros tenham sido informados.
  */
-function montarQueryPaginacao(params?: ListarPontosParams): string {
+function montarQueryPontos(params?: ListarPontosParams): string {
   if (!params) {
     return "";
   }
 
   const queryParams: string[] = [];
 
+  if (params.nome !== undefined && params.nome.trim() !== "") {
+    queryParams.push(`nome=${encodeURIComponent(params.nome.trim())}`);
+  }
   if (params.page !== undefined) {
     queryParams.push(`page=${encodeURIComponent(String(params.page))}`);
   }
@@ -52,17 +41,28 @@ function montarQueryPaginacao(params?: ListarPontosParams): string {
 }
 
 /**
- * Consulta `GET /pontos` na API devolvendo o objeto paginado completo (`content` e `page`).
+ * Consulta `GET /pontos/filtro` na API devolvendo o objeto paginado `Page<Ponto>`.
  */
-export async function listarPontosPaginado(
-  params?: ListarPontosParams,
-): Promise<PageResponse<Ponto>> {
-  const query = montarQueryPaginacao(params);
-  return apiGet<PageResponse<Ponto>>(`/pontos${query}`);
+export async function filtrarPontos(
+  nome?: string,
+  params?: Omit<ListarPontosParams, "nome">,
+): Promise<Page<Ponto>> {
+  const query = montarQueryPontos({ ...params, nome });
+  return apiGet<Page<Ponto>>(`/pontos/filtro${query}`);
 }
 
 /**
- * Lista os pontos de coleta e distribuição vindos da API (`content` da página).
+ * Consulta `GET /pontos/filtro` na API devolvendo o objeto paginado completo (`content` e `page`).
+ */
+export async function listarPontosPaginado(
+  params?: ListarPontosParams,
+): Promise<Page<Ponto>> {
+  const query = montarQueryPontos(params);
+  return apiGet<Page<Ponto>>(`/pontos/filtro${query}`);
+}
+
+/**
+ * Lista os pontos de coleta e distribuição vindos da API (`resposta.content`).
  */
 export async function listarPontos(
   params?: ListarPontosParams,
@@ -72,11 +72,18 @@ export async function listarPontos(
 }
 
 /**
- * Busca os detalhes de um ponto específico pelo seu `id` (`GET /pontos/{id}`).
+ * Busca os detalhes de um ponto específico pelo seu `pontoID` (`GET /pontos/{id}`).
  * Lança `ApiError` com `status = 404` quando o ponto não existe.
  */
-export async function buscarPontoPorId(id: number | string): Promise<Ponto> {
-  return apiGet<Ponto>(`/pontos/${encodeURIComponent(String(id))}`);
+export async function buscarPontoPorId(pontoID: string): Promise<Ponto> {
+  return apiGet<Ponto>(`/pontos/${encodeURIComponent(String(pontoID))}`);
+}
+
+/**
+ * Exclui um ponto específico pelo seu `pontoID` (`DELETE /pontos/{id}`).
+ */
+export async function excluirPonto(pontoID: string): Promise<void> {
+  await apiDelete(`/pontos/${encodeURIComponent(String(pontoID))}`);
 }
 
 /**

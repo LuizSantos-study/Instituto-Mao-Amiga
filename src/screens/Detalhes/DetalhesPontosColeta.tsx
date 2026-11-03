@@ -6,6 +6,7 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -13,13 +14,14 @@ import { RootStackParamList } from "../../types/navigation";
 import { Ponto } from "../../types/ponto";
 import {
   buscarPontoPorId,
+  excluirPonto,
   isPontoNaoEncontrado,
 } from "../../services/pontosService";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DetalhesPontosColeta">;
 
-export default function DetalhesPontosColeta({ route }: Props) {
-  const { id } = route.params;
+export default function DetalhesPontosColeta({ route, navigation }: Props) {
+  const { pontoID } = route.params;
 
   const [ponto, setPonto] = useState<Ponto | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -31,7 +33,7 @@ export default function DetalhesPontosColeta({ route }: Props) {
       setCarregando(true);
       setNaoEncontrado(false);
       setErro(null);
-      const dados = await buscarPontoPorId(id);
+      const dados = await buscarPontoPorId(pontoID);
       setPonto(dados);
     } catch (error) {
       if (isPontoNaoEncontrado(error)) {
@@ -46,11 +48,34 @@ export default function DetalhesPontosColeta({ route }: Props) {
     } finally {
       setCarregando(false);
     }
-  }, [id]);
+  }, [pontoID]);
 
   useEffect(() => {
     carregarPonto();
   }, [carregarPonto]);
+
+  function confirmarExclusao() {
+    if (!ponto) return;
+    Alert.alert(
+      "Excluir Ponto de Coleta",
+      `Deseja realmente excluir "${ponto.nome}"?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await excluirPonto(ponto.pontoID);
+              navigation.goBack();
+            } catch {
+              Alert.alert("Erro", "Não foi possível excluir o ponto de coleta.");
+            }
+          },
+        },
+      ],
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
@@ -69,7 +94,7 @@ export default function DetalhesPontosColeta({ route }: Props) {
           <View style={styles.cardErro}>
             <Text style={styles.naoEncontradoTitulo}>Ponto não encontrado</Text>
             <Text style={styles.erroDescricao}>
-              O ponto de coleta solicitado (ID #{id}) não foi encontrado.
+              O ponto de coleta solicitado (ID #{pontoID}) não foi encontrado.
             </Text>
           </View>
         ) : erro ? (
@@ -89,11 +114,22 @@ export default function DetalhesPontosColeta({ route }: Props) {
             </TouchableOpacity>
           </View>
         ) : ponto ? (
-          <View style={styles.card}>
-            <Text style={styles.nome}>{ponto.nome}</Text>
-            <Text style={styles.campo}>📍 {ponto.endereco}</Text>
-            <Text style={styles.campo}>🕒 {ponto.diasHorarios}</Text>
-            <Text style={styles.campo}>📦 {ponto.recebeDistribui}</Text>
+          <View style={styles.wrapper}>
+            <View style={styles.card}>
+              <Text style={styles.nome}>{ponto.nome}</Text>
+              <Text style={styles.campo}>📍 {ponto.endereco}</Text>
+              <Text style={styles.campo}>🕒 {ponto.diasHorarios}</Text>
+              <Text style={styles.campo}>📦 {ponto.recebeDistribui}</Text>
+              <Text style={styles.codigo}>Código: #{ponto.pontoID}</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.botaoExcluir}
+              onPress={confirmarExclusao}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.botaoExcluirTexto}>🗑️ Excluir Ponto</Text>
+            </TouchableOpacity>
           </View>
         ) : null}
       </ScrollView>
@@ -111,6 +147,11 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingHorizontal: 16,
     paddingBottom: 24,
+  },
+  wrapper: {
+    width: "100%",
+    maxWidth: 600,
+    gap: 16,
   },
   feedbackContainer: {
     paddingVertical: 48,
@@ -190,5 +231,25 @@ const styles = StyleSheet.create({
     color: "#444",
     marginTop: 8,
     lineHeight: 22,
+  },
+  codigo: {
+    fontSize: 13,
+    color: "#94a3b8",
+    marginTop: 12,
+    fontFamily: "monospace",
+  },
+  botaoExcluir: {
+    backgroundColor: "#dc2626",
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
+    width: "100%",
+  },
+  botaoExcluirTexto: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
