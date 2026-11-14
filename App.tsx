@@ -3,15 +3,16 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 
-// Importação das telas da pasta Telas
-import PontosColeta from "./Telas/PontosColeta/PontosColeta";
-import Detalhes from "./Telas/Detalhes/DetalhesPontosColeta";
-import TelaCadastroDoacao from "./Telas/Cadastro/TelaCadastroDoacao";
-import TelaDoacoesCadastradas from "./Telas/Doacoes/TelaDoacoesCadastradas";
-import DetalhesDoacao from "./Telas/Detalhes/DetalhesDoacao";
-import { PONTOS_MOCK } from "./Telas/PontosColeta/PontosColeta";
+import PontosColeta from "./src/screens/PontosColeta/PontosColeta";
+import DetalhesPontosColeta from "./src/screens/Detalhes/DetalhesPontosColeta";
+import TelaCadastroPonto from "./src/screens/Cadastro/TelaCadastroPonto";
+import TelaMeusPontos from "./src/screens/PontosColeta/TelaMeusPontos";
+import TelaCadastroDoacao from "./src/screens/Cadastro/TelaCadastroDoacao";
+import TelaDoacoesCadastradas from "./src/screens/Doacoes/TelaDoacoesCadastradas";
+import DetalhesDoacao from "./src/screens/Detalhes/DetalhesDoacao";
+import { RootStackParamList } from "./src/types/navigation";
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   return (
@@ -24,14 +25,24 @@ export default function App() {
         />
         <Stack.Screen
           name="DetalhesPontosColeta"
-          component={Detalhes}
+          component={DetalhesPontosColeta}
           options={{ title: "Detalhes do Ponto" }}
         />
-        <Stack.Screen name="CadastroDoacao" options={{ title: "Nova Doação" }}>
-          {(props) => (
-            <TelaCadastroDoacao {...props} pontosDisponiveis={PONTOS_MOCK} />
-          )}
-        </Stack.Screen>
+        <Stack.Screen
+          name="CadastroPonto"
+          component={TelaCadastroPonto}
+          options={{ title: "Novo Ponto" }}
+        />
+        <Stack.Screen
+          name="MeusPontos"
+          component={TelaMeusPontos}
+          options={{ title: "Meus pontos" }}
+        />
+        <Stack.Screen
+          name="CadastroDoacao"
+          component={TelaCadastroDoacao}
+          options={{ title: "Nova Doação" }}
+        />
         <Stack.Screen
           name="DoacoesCadastradas"
           component={TelaDoacoesCadastradas}
