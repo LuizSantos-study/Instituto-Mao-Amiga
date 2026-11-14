@@ -187,5 +187,3 @@ GET /api/v1/pontos/filtro?filtro=bueno&page=0&size=10
 GET /api/v1/pontos/filtro?page=1&size=10&sort=bairro,asc
 ```
 **Resposta:** retorna os itens `11` a `20` ordenados por `bairro` crescente, com `"page": { "size": 10, "number": 1, "totalElements": 26, "totalPages": 3 }`.
-
-Consulte [ROTEIRO_DEMONSTRACAO.md](./ROTEIRO_DEMONSTRACAO.md) para o roteiro completo de até 3 minutos e a defesa de decisão técnica.
