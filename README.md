@@ -188,15 +188,4 @@ GET /api/v1/pontos/filtro?page=1&size=10&sort=bairro,asc
 ```
 **Resposta:** retorna os itens `11` a `20` ordenados por `bairro` crescente, com `"page": { "size": 10, "number": 1, "totalElements": 26, "totalPages": 3 }`.
 
----
-
-## Prints do Swagger (`[N2-1]` e `[N2-5]`)
-
-> **Pendente de captura local após subir a API (`./mvnw spring-boot:run`):**
-> Adicione nesta seção os prints do Swagger UI (`http://localhost:8080/swagger-ui.html`) para cada endpoint de `/api/v1/pontos` e `/api/v1/doacoes`, incluindo exemplos de resposta **HTTP 400** (validação) e **HTTP 404** (ID inexistente).
-
----
-
-## Roteiro de Demonstração
-
 Consulte [ROTEIRO_DEMONSTRACAO.md](./ROTEIRO_DEMONSTRACAO.md) para o roteiro completo de até 3 minutos e a defesa de decisão técnica.
