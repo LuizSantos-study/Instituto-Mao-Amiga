@@ -16,24 +16,19 @@ export interface Page<T> {
   page: PageMetadata;
 }
 
-/**
- * Ponto de coleta/distribuição exibido no app.
- * Espelha campo a campo o record PontoResponse da API Spring Boot.
- */
-export interface Ponto {
-  pontoID: string;
-  nome: string;
-  endereco: string;
-  diasHorarios: string;
-  recebeDistribui: string;
-  latitude: number;
-  longitude: number;
-}
+export type TipoPonto = "coleta" | "distribuição";
 
 /**
- * Versão resumida do ponto usada na seleção de destino do cadastro de doação.
+ * Ponto de coleta/distribuição exibido no app.
+ * Espelha campo a campo o record PontoResponseDTO da API Spring Boot.
  */
-export interface PontoColeta {
-  pontoID: string;
+export interface Ponto {
+  id: string;
   nome: string;
+  endereco: string;
+  bairro: string;
+  horario: string;
+  tipo: TipoPonto;
 }
+
+export type PontoPayload = Omit<Ponto, "id">;

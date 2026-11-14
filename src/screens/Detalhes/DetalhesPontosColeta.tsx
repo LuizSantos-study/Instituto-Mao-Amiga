@@ -13,15 +13,16 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../types/navigation";
 import { Ponto } from "../../types/ponto";
 import {
-  buscarPontoPorId,
-  excluirPonto,
+  buscarPorId,
+  excluir,
   isPontoNaoEncontrado,
 } from "../../services/pontosService";
+import { removerFavorito } from "../../services/favoritosStorage";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DetalhesPontosColeta">;
 
 export default function DetalhesPontosColeta({ route, navigation }: Props) {
-  const { pontoID } = route.params;
+  const { id } = route.params;
 
   const [ponto, setPonto] = useState<Ponto | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -33,7 +34,7 @@ export default function DetalhesPontosColeta({ route, navigation }: Props) {
       setCarregando(true);
       setNaoEncontrado(false);
       setErro(null);
-      const dados = await buscarPontoPorId(pontoID);
+      const dados = await buscarPorId(id);
       setPonto(dados);
     } catch (error) {
       if (isPontoNaoEncontrado(error)) {
@@ -48,11 +49,18 @@ export default function DetalhesPontosColeta({ route, navigation }: Props) {
     } finally {
       setCarregando(false);
     }
-  }, [pontoID]);
+  }, [id]);
 
   useEffect(() => {
     carregarPonto();
   }, [carregarPonto]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      carregarPonto();
+    });
+    return unsubscribe;
+  }, [navigation, carregarPonto]);
 
   function confirmarExclusao() {
     if (!ponto) return;
@@ -66,10 +74,15 @@ export default function DetalhesPontosColeta({ route, navigation }: Props) {
           style: "destructive",
           onPress: async () => {
             try {
-              await excluirPonto(ponto.pontoID);
+              await excluir(ponto.id);
+              await removerFavorito(ponto.id);
               navigation.goBack();
-            } catch {
-              Alert.alert("Erro", "Não foi possível excluir o ponto de coleta.");
+            } catch (error) {
+              const mensagem =
+                error instanceof Error
+                  ? error.message
+                  : "Não foi possível excluir o ponto de coleta.";
+              Alert.alert("Erro", mensagem);
             }
           },
         },
@@ -92,9 +105,9 @@ export default function DetalhesPontosColeta({ route, navigation }: Props) {
           </View>
         ) : naoEncontrado ? (
           <View style={styles.cardErro}>
-            <Text style={styles.naoEncontradoTitulo}>Ponto não encontrado</Text>
+            <Text style={styles.naoEncontradoTitulo}>ponto não encontrado</Text>
             <Text style={styles.erroDescricao}>
-              O ponto de coleta solicitado (ID #{pontoID}) não foi encontrado.
+              O ponto de coleta solicitado (ID {id}) não foi encontrado.
             </Text>
           </View>
         ) : erro ? (
@@ -118,10 +131,23 @@ export default function DetalhesPontosColeta({ route, navigation }: Props) {
             <View style={styles.card}>
               <Text style={styles.nome}>{ponto.nome}</Text>
               <Text style={styles.campo}>📍 {ponto.endereco}</Text>
-              <Text style={styles.campo}>🕒 {ponto.diasHorarios}</Text>
-              <Text style={styles.campo}>📦 {ponto.recebeDistribui}</Text>
-              <Text style={styles.codigo}>Código: #{ponto.pontoID}</Text>
+              <Text style={styles.campo}>🏘️ Bairro: {ponto.bairro}</Text>
+              <Text style={styles.campo}>🕒 {ponto.horario}</Text>
+              <Text style={styles.campo}>📦 Tipo: {ponto.tipo}</Text>
+              <Text style={styles.codigo}>Código: {ponto.id}</Text>
             </View>
+
+            <TouchableOpacity
+              style={styles.botaoEditar}
+              onPress={() =>
+                navigation.navigate("CadastroPonto", {
+                  pontoParaEditar: ponto,
+                })
+              }
+              activeOpacity={0.8}
+            >
+              <Text style={styles.botaoEditarTexto}>✏️ Editar Ponto</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.botaoExcluir}
@@ -151,7 +177,7 @@ const styles = StyleSheet.create({
   wrapper: {
     width: "100%",
     maxWidth: 600,
-    gap: 16,
+    gap: 12,
   },
   feedbackContainer: {
     paddingVertical: 48,
@@ -233,10 +259,24 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   codigo: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#94a3b8",
     marginTop: 12,
     fontFamily: "monospace",
+  },
+  botaoEditar: {
+    backgroundColor: "#0284c7",
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
+    width: "100%",
+  },
+  botaoEditarTexto: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   botaoExcluir: {
     backgroundColor: "#dc2626",

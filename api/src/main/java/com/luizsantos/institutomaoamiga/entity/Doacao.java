@@ -1,4 +1,7 @@
-package com.luizsantos.institutomaoamiga.model;
+package com.luizsantos.institutomaoamiga.entity;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,11 +12,11 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "doacoes")
-public class ItemDoacao {
+public class Doacao {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "tipo_item", nullable = false)
     private String tipoItem;
@@ -24,33 +27,24 @@ public class ItemDoacao {
     @Column(name = "ponto_destino", nullable = false)
     private String pontoDestino;
 
-    @Column(name = "ponto_id")
-    private String pontoID;
-
     @Column(name = "criado_em", nullable = false)
-    private String criadoEm;
+    private LocalDateTime criadoEm;
 
-    public ItemDoacao() {
+    public Doacao() {
     }
 
-    public ItemDoacao(
-            String tipoItem,
-            Integer quantidade,
-            String pontoDestino,
-            String pontoID,
-            String criadoEm) {
+    public Doacao(String tipoItem, Integer quantidade, String pontoDestino, LocalDateTime criadoEm) {
         this.tipoItem = tipoItem;
         this.quantidade = quantidade;
         this.pontoDestino = pontoDestino;
-        this.pontoID = pontoID;
         this.criadoEm = criadoEm;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -78,19 +72,11 @@ public class ItemDoacao {
         this.pontoDestino = pontoDestino;
     }
 
-    public String getPontoID() {
-        return pontoID;
-    }
-
-    public void setPontoID(String pontoID) {
-        this.pontoID = pontoID;
-    }
-
-    public String getCriadoEm() {
+    public LocalDateTime getCriadoEm() {
         return criadoEm;
     }
 
-    public void setCriadoEm(String criadoEm) {
+    public void setCriadoEm(LocalDateTime criadoEm) {
         this.criadoEm = criadoEm;
     }
 }

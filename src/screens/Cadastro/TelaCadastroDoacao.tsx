@@ -10,32 +10,19 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
-
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import {
-  salvarDoacao,
-  atualizarDoacao,
-  obterUltimaDoacao,
-} from "../../services/doacoesStorage";
-import { listarPontos } from "../../services/pontosService";
+import { cadastrar, editar } from "../../services/doacoesService";
+import { listar as listarPontos } from "../../services/pontosService";
 import { Doacao } from "../../types/doacao";
-import { Ponto, PontoColeta } from "../../types/ponto";
+import { Ponto } from "../../types/ponto";
 import { RootStackParamList } from "../../types/navigation";
 
-// Reexporta o tipo para manter compatibilidade com quem importava daqui
-export type { PontoColeta };
+type Props = NativeStackScreenProps<RootStackParamList, "CadastroDoacao">;
 
-type TelaCadastroDoacaoProps = NativeStackScreenProps<
-  RootStackParamList,
-  "CadastroDoacao"
->;
-
-export default function TelaCadastroDoacao({
-  navigation,
-  route,
-}: TelaCadastroDoacaoProps) {
+export default function TelaCadastroDoacao({ navigation, route }: Props) {
   const doacaoParaEditar: Doacao | undefined = route?.params?.doacaoParaEditar;
   const modoEdicao = Boolean(doacaoParaEditar);
 
@@ -47,14 +34,11 @@ export default function TelaCadastroDoacao({
   const [quantidade, setQuantidade] = useState(
     doacaoParaEditar ? String(doacaoParaEditar.quantidade) : "",
   );
-  const [pontoSelecionadoId, setPontoSelecionadoId] = useState<string | null>(
-    doacaoParaEditar?.pontoID !== undefined
-      ? String(doacaoParaEditar.pontoID)
-      : null,
+  const [pontoDestino, setPontoDestino] = useState<string>(
+    doacaoParaEditar?.pontoDestino ?? "",
   );
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
-  const [ultimaDoacao, setUltimaDoacao] = useState<Doacao | null>(null);
 
   const carregarPontosDaApi = useCallback(async () => {
     try {
@@ -62,20 +46,6 @@ export default function TelaCadastroDoacao({
       setErroPontos(null);
       const dados = await listarPontos();
       setPontosDisponiveis(dados);
-
-      if (doacaoParaEditar) {
-        const destinoAnterior =
-          doacaoParaEditar.pontoDestino || doacaoParaEditar.pontoNome || "";
-        const pontoCorrespondente = dados.find(
-          (p) =>
-            (doacaoParaEditar.pontoID !== undefined &&
-              p.pontoID === String(doacaoParaEditar.pontoID)) ||
-            p.nome.toLowerCase() === destinoAnterior.toLowerCase(),
-        );
-        if (pontoCorrespondente) {
-          setPontoSelecionadoId(pontoCorrespondente.pontoID);
-        }
-      }
     } catch (error) {
       const mensagem =
         error instanceof Error
@@ -85,16 +55,7 @@ export default function TelaCadastroDoacao({
     } finally {
       setCarregandoPontos(false);
     }
-  }, [doacaoParaEditar]);
-
-  async function carregarUltimaDoacao() {
-    try {
-      const ultima = await obterUltimaDoacao();
-      setUltimaDoacao(ultima);
-    } catch (e) {
-      console.error("Erro ao carregar última doação:", e);
-    }
-  }
+  }, []);
 
   useEffect(() => {
     carregarPontosDaApi();
@@ -104,24 +65,12 @@ export default function TelaCadastroDoacao({
     if (doacaoParaEditar) {
       setTipoItem(doacaoParaEditar.tipoItem);
       setQuantidade(String(doacaoParaEditar.quantidade));
-      if (doacaoParaEditar.pontoID !== undefined) {
-        setPontoSelecionadoId(String(doacaoParaEditar.pontoID));
-      }
+      setPontoDestino(doacaoParaEditar.pontoDestino);
       navigation.setOptions({ title: "Editar Doação" });
     } else {
       navigation.setOptions({ title: "Nova Doação" });
-      carregarUltimaDoacao();
     }
   }, [doacaoParaEditar, navigation]);
-
-  useEffect(() => {
-    if (!modoEdicao) {
-      const unsubscribe = navigation.addListener("focus", () => {
-        carregarUltimaDoacao();
-      });
-      return unsubscribe;
-    }
-  }, [navigation, modoEdicao]);
 
   async function validarESalvar() {
     if (tipoItem.trim() === "") {
@@ -132,7 +81,7 @@ export default function TelaCadastroDoacao({
     const qtdNumerica = Number(quantidade.trim());
     if (
       quantidade.trim() === "" ||
-      isNaN(qtdNumerica) ||
+      Number.isNaN(qtdNumerica) ||
       !Number.isInteger(qtdNumerica) ||
       qtdNumerica <= 0
     ) {
@@ -140,65 +89,43 @@ export default function TelaCadastroDoacao({
       return;
     }
 
-    if (pontoSelecionadoId === null) {
+    if (pontoDestino.trim() === "") {
       setErro("Selecione um ponto de destino para a doação.");
       return;
     }
 
-    const ponto = pontosDisponiveis.find(
-      (p) => p.pontoID === pontoSelecionadoId,
-    );
-    if (!ponto) {
-      setErro("Ponto de destino selecionado não foi encontrado.");
-      return;
-    }
+    const payload = {
+      tipoItem: tipoItem.trim(),
+      quantidade: qtdNumerica,
+      pontoDestino: pontoDestino.trim(),
+    };
 
     try {
       setSalvando(true);
       setErro("");
 
       if (modoEdicao && doacaoParaEditar) {
-        const doacaoAtualizada: Doacao = {
-          doacaoID: doacaoParaEditar.doacaoID,
-          tipoItem: tipoItem.trim(),
-          quantidade: qtdNumerica,
-          pontoDestino: ponto.nome,
-          pontoID: ponto.pontoID,
-          pontoNome: ponto.nome,
-          criadoEm:
-            doacaoParaEditar.criadoEm || doacaoParaEditar.dataRegistro || "",
-          dataRegistro: doacaoParaEditar.dataRegistro,
-        };
-
-        await atualizarDoacao(doacaoAtualizada);
+        await editar(doacaoParaEditar.id, payload);
         Keyboard.dismiss();
-        alert("Doação atualizada com sucesso!");
-        navigation.navigate("DoacoesCadastradas");
+        Alert.alert("Sucesso", "Doação atualizada com sucesso!");
+        navigation.goBack();
       } else {
-        await salvarDoacao({
-          tipoItem: tipoItem.trim(),
-          quantidade: qtdNumerica,
-          pontoDestino: ponto.nome,
-          pontoID: ponto.pontoID,
-          pontoNome: ponto.nome,
-        });
-
+        await cadastrar(payload);
         Keyboard.dismiss();
-        alert("Doação registrada com sucesso!");
-
-        // Limpa os campos do formulário
+        Alert.alert("Sucesso", "Doação registrada com sucesso!");
         setTipoItem("");
         setQuantidade("");
-        setPontoSelecionadoId(null);
-
+        setPontoDestino("");
         navigation.navigate("DoacoesCadastradas");
       }
-    } catch {
-      setErro(
-        modoEdicao
-          ? "Ocorreu um erro ao atualizar a doação na API."
-          : "Ocorreu um erro ao salvar a doação na API.",
-      );
+    } catch (error) {
+      const mensagem =
+        error instanceof Error
+          ? error.message
+          : modoEdicao
+            ? "Não foi possível atualizar a doação na API."
+            : "Não foi possível cadastrar a doação na API.";
+      setErro(mensagem);
     } finally {
       setSalvando(false);
     }
@@ -259,27 +186,28 @@ export default function TelaCadastroDoacao({
               </View>
             ) : (
               <View style={styles.pontosContainer}>
-                {pontosDisponiveis.map((ponto) => (
-                  <TouchableOpacity
-                    key={ponto.pontoID}
-                    style={[
-                      styles.pontoOption,
-                      pontoSelecionadoId === ponto.pontoID &&
-                        styles.pontoOptionSelected,
-                    ]}
-                    onPress={() => setPontoSelecionadoId(ponto.pontoID)}
-                  >
-                    <Text
+                {pontosDisponiveis.map((ponto) => {
+                  const selecionado = pontoDestino === ponto.nome;
+                  return (
+                    <TouchableOpacity
+                      key={ponto.id}
                       style={[
-                        styles.pontoOptionText,
-                        pontoSelecionadoId === ponto.pontoID &&
-                          styles.pontoOptionTextSelected,
+                        styles.pontoOption,
+                        selecionado && styles.pontoOptionSelected,
                       ]}
+                      onPress={() => setPontoDestino(ponto.nome)}
                     >
-                      {ponto.nome}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text
+                        style={[
+                          styles.pontoOptionText,
+                          selecionado && styles.pontoOptionTextSelected,
+                        ]}
+                      >
+                        {ponto.nome}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             )}
 
@@ -294,7 +222,7 @@ export default function TelaCadastroDoacao({
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.botaoSalvarTexto}>
-                  {modoEdicao ? "Salvar Alterações" : "Registrar Doação"}
+                  {modoEdicao ? "Salvar alterações" : "Registrar Doação"}
                 </Text>
               )}
             </TouchableOpacity>
@@ -307,25 +235,6 @@ export default function TelaCadastroDoacao({
                 📦 Ver Minhas Doações
               </Text>
             </TouchableOpacity>
-
-            {!modoEdicao && ultimaDoacao && (
-              <View style={styles.cardUltimaDoacao}>
-                <Text style={styles.tituloUltimaDoacao}>
-                  Última doação salva:
-                </Text>
-                <Text style={styles.itemUltimaDoacao}>
-                  {ultimaDoacao.tipoItem} — {ultimaDoacao.quantidade}{" "}
-                  {ultimaDoacao.quantidade === 1 ? "unidade" : "unidades"}
-                </Text>
-                <Text style={styles.detalheUltimaDoacao}>
-                  📍 Destino:{" "}
-                  {ultimaDoacao.pontoDestino || ultimaDoacao.pontoNome}
-                </Text>
-                <Text style={styles.dataUltimaDoacao}>
-                  🕒 {ultimaDoacao.criadoEm || ultimaDoacao.dataRegistro}
-                </Text>
-              </View>
-            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -358,90 +267,92 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "bold",
+    fontWeight: "600",
     color: "#444",
     marginBottom: 6,
-    marginTop: 12,
   },
   input: {
     backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     fontSize: 16,
+    color: "#111",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    marginBottom: 16,
     minHeight: 48,
   },
   pontosFeedback: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
     paddingVertical: 12,
+    marginBottom: 16,
   },
   pontosFeedbackTexto: {
     fontSize: 14,
     color: "#555",
   },
   pontosErroBox: {
-    backgroundColor: "#fef2f2",
-    borderWidth: 1,
-    borderColor: "#fecaca",
+    backgroundColor: "#fee2e2",
     borderRadius: 8,
     padding: 12,
-    marginTop: 6,
+    marginBottom: 16,
+    gap: 8,
   },
   pontosErroTexto: {
-    color: "#dc2626",
-    fontSize: 13,
-    marginBottom: 8,
+    color: "#991b1b",
+    fontSize: 14,
   },
   botaoRecarregarPontos: {
-    alignSelf: "flex-start",
     backgroundColor: "#0284c7",
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 6,
+    alignSelf: "flex-start",
     minHeight: 44,
     justifyContent: "center",
   },
   botaoRecarregarPontosTexto: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "bold",
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
   },
   pontosContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginTop: 6,
+    marginBottom: 16,
   },
   pontoOption: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: "#0284c7",
-    borderRadius: 20,
     backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#cbd5e1",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     minHeight: 44,
     justifyContent: "center",
   },
   pontoOptionSelected: {
     backgroundColor: "#0284c7",
+    borderColor: "#0284c7",
   },
   pontoOptionText: {
-    color: "#0284c7",
     fontSize: 14,
+    color: "#334155",
     fontWeight: "500",
   },
   pontoOptionTextSelected: {
-    color: "#fff",
+    color: "#ffffff",
+    fontWeight: "700",
   },
   erro: {
     color: "#dc2626",
-    fontSize: 13,
-    marginTop: 12,
-    fontWeight: "500",
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 12,
   },
   botaoSalvar: {
     backgroundColor: "#0284c7",
@@ -449,65 +360,30 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 24,
     minHeight: 48,
-    width: "100%",
+    marginBottom: 10,
   },
   botaoDesabilitado: {
     opacity: 0.7,
   },
   botaoSalvarTexto: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: "#ffffff",
     fontSize: 16,
+    fontWeight: "bold",
   },
   botaoVerDoacoes: {
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffff",
     borderWidth: 1.5,
     borderColor: "#0284c7",
     paddingVertical: 13,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 12,
     minHeight: 48,
-    width: "100%",
   },
   botaoVerDoacoesTexto: {
     color: "#0284c7",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  cardUltimaDoacao: {
-    backgroundColor: "#fff",
-    marginTop: 24,
-    padding: 14,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderLeftWidth: 4,
-    borderLeftColor: "#0284c7",
-  },
-  tituloUltimaDoacao: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#64748b",
-    textTransform: "uppercase",
-    marginBottom: 4,
-  },
-  itemUltimaDoacao: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#1e293b",
-    marginBottom: 2,
-  },
-  detalheUltimaDoacao: {
-    fontSize: 14,
-    color: "#475569",
-    marginBottom: 2,
-  },
-  dataUltimaDoacao: {
-    fontSize: 12,
-    color: "#94a3b8",
   },
 });

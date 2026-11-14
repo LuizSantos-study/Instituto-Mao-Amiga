@@ -74,3 +74,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# H2 local database files
+api/data/
+*.mv.db
+*.trace.db

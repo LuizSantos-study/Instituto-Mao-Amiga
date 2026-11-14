@@ -1,46 +1,50 @@
 # Instituto Mão Amiga
 
-Sistema composto por um aplicativo móvel em React Native (Expo) e uma API RESTful em Spring Boot para o gerenciamento e a consulta de pontos de coleta e distribuição de doações do Instituto Mão Amiga, além do registro local de doações realizadas.
+Sistema composto por um aplicativo móvel em React Native (Expo) e uma API RESTful em Spring Boot para o gerenciamento completo (CRUD) de pontos de coleta/distribuição e doações do Instituto Mão Amiga, além da lista local de pontos favoritos no aparelho.
 
-## Arquitetura e Estrutura do Projeto
+## Localização da API
 
-O repositório unifica a aplicação móvel (na raiz e no diretório `src/`) e o serviço de backend (no diretório `api/`):
+A API Spring Boot está localizada na pasta [`api/`](./api) deste mesmo repositório.
 
 ```text
 .
-├── api/                          # Projeto Spring Boot (API REST)
-│   ├── src/main/java/            # Código-fonte Java (controller, service, repository, model, dto)
-│   ├── src/main/resources/       # Configurações (application.properties) e carga inicial (data.sql)
-│   └── src/test/java/            # Testes de integração da API (MockMvc / JUnit 5)
-├── src/                          # Código-fonte da aplicação móvel organizado em camadas
-│   ├── screens/                  # Camada de apresentação (telas tipadas com NativeStackScreenProps)
-│   ├── services/                 # Camada de serviços (cliente HTTP api.ts, pontosService.ts e doacoesStorage.ts)
-│   └── types/                    # Contratos e tipagens estáticas (Ponto, Doacao e RootStackParamList)
-├── App.tsx                       # Configuração exclusiva do container e da pilha de navegação
-└── tsconfig.json                 # Configuração do compilador TypeScript em modo estrito ("strict": true)
+├── api/                          # API REST Spring Boot
+│   ├── src/main/java/com/luizsantos/institutomaoamiga/
+│   │   ├── config/               # Carga inicial idempotente (26 pontos em Goiânia)
+│   │   ├── controller/           # Endpoints REST (/api/v1/pontos e /api/v1/doacoes)
+│   │   ├── dto/                  # Records RequestDTO (Bean Validation) e ResponseDTO
+│   │   ├── entity/               # Entidades JPA (Ponto e Doacao com UUID)
+│   │   ├── repository/           # Repositórios Spring Data JPA com @Query
+│   │   └── service/              # Regras de negócio e paginação
+│   ├── src/main/resources/       # application.properties (H2 em arquivo, via_dto)
+│   └── src/test/java/            # Testes de integração (MockMvc / JUnit 5)
+├── src/                          # Aplicativo móvel React Native (Expo)
+│   ├── screens/                  # Telas (PontosColeta, CadastroPonto, MeusPontos, Doações)
+│   ├── services/                 # api.ts, pontosService.ts, doacoesService.ts, favoritosStorage.ts
+│   └── types/                    # Contratos TypeScript (Ponto, Doacao, RootStackParamList)
+├── App.tsx                       # Navegação principal (React Navigation Stack)
+└── ROTEIRO_DEMONSTRACAO.md       # Roteiro de apresentação (3 min) e decisão técnica
 ```
 
 ## Tecnologias Utilizadas
 
-### Aplicativo Móvel
-- React Native (0.81)
-- Expo (SDK 54)
-- TypeScript (`strict: true`)
-- React Navigation (`@react-navigation/native` e `@react-navigation/native-stack`)
-- AsyncStorage (`@react-native-async-storage/async-storage`)
-
 ### API REST (`api/`)
-- Java 25 / Spring Boot
-- Spring Web
-- Spring Data JPA
-- H2 Database (banco de dados em memória)
-- Maven Wrapper (`mvnw`)
+- **Java 21** (`java.version=21` no `pom.xml`)
+- Spring Boot (WebMVC, Data JPA, Validation)
+- H2 Database gravando em arquivo (`jdbc:h2:file:./data/institutomaoamiga`)
+- Springdoc OpenAPI / Swagger UI (`springdoc-openapi-starter-webmvc-ui`)
 
-## Localização e Execução da API
+### Aplicativo Móvel
+- React Native (0.81) + Expo (SDK 54)
+- TypeScript (`strict: true`)
+- React Navigation (`@react-navigation/native-stack`)
+- AsyncStorage (usado exclusivamente para armazenar os IDs dos pontos favoritos)
 
-O projeto da API Spring Boot está localizado na pasta `api/` deste repositório.
+---
 
-### 1. Iniciar a API
+## Como Rodar a API
+
+Na pasta `api/`:
 
 ```bash
 cd api
@@ -54,24 +58,21 @@ cd api
 mvnw.cmd spring-boot:run
 ```
 
-A API será iniciada por padrão na porta `8080` (`http://localhost:8080`). Ao subir a aplicação, o arquivo `api/src/main/resources/data.sql` realiza a carga inicial automática de 10 pontos de coleta e distribuição reais localizados em Goiânia - GO, incluindo coordenadas geográficas (`latitude` e `longitude`).
-
-### 2. Endpoints Disponíveis
-
-- `GET /pontos`: Retorna a listagem paginada de pontos no formato `Page` do Spring (`content` e `page`), com tamanho padrão de 20 registros por página e limite máximo de 50 registros. Aceita os parâmetros de consulta `page`, `size` e `sort`.
-- `GET /pontos/{id}`: Retorna os dados de um ponto específico através de um `record` DTO (`PontoResponse`). Caso o identificador não exista, retorna o código de status HTTP `404 Not Found`.
-- Console H2: Disponível em `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:institutomaoamiga`, usuário: `sa`, sem senha).
-
-### 3. Executar os Testes da API
+- **URL base:** `http://localhost:8080`
+- **Swagger UI:** `http://localhost:8080/swagger-ui.html`
+- **Console H2:** `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:file:./data/institutomaoamiga`, usuário: `sa`, senha em branco)
+- **Testes automatizados da API:**
 
 ```bash
 cd api
 ./mvnw test
 ```
 
-## Execução do Aplicativo Móvel
+Ao iniciar com banco vazio, a classe `CargaInicialConfig` insere automaticamente **26 pontos em Goiânia** e **3 doações iniciais**, sem duplicar registros a cada reinício.
 
-### 1. Instalar Dependências e Iniciar
+---
+
+## Como Rodar o Aplicativo
 
 Na raiz do repositório:
 
@@ -80,32 +81,122 @@ npm install
 npx expo start
 ```
 
-### 2. Configuração de Endereço da API
+### Onde Trocar o IP da API
 
-A URL base de comunicação com a API está centralizada exclusivamente no arquivo `src/services/api.ts`:
-- Emulador Android: utiliza `http://10.0.2.2:8080`.
-- Simulador iOS ou navegador Web: utiliza `http://localhost:8080`.
-- Dispositivo físico via Expo Go: substitua a constante `API_BASE_URL` em `src/services/api.ts` pelo endereço IP local da máquina na mesma rede Wi-Fi (exemplo: `http://192.168.1.10:8080`).
+A URL base fica centralizada exclusivamente em `src/services/api.ts` na constante `API_BASE_URL`:
 
-### 3. Verificação de Tipagem Estática
+- **Emulador Android:** `http://10.0.2.2:8080`
+- **iOS Simulator / Web:** `http://localhost:8080`
+- **Celular físico na rede local (Expo Go):** substitua `API_BASE_URL` em `src/services/api.ts` pelo IP da sua máquina na mesma rede Wi-Fi (ex.: `http://192.168.0.15:8080`).
+
+Verificação de tipagem TypeScript:
 
 ```bash
 npx tsc --noEmit
 ```
 
-## Status das Entregas
+---
 
-- [x] Tela de listagem e tela de detalhes de pontos de coleta
-- [x] Navegação tipada entre telas com React Navigation (`RootStackParamList` e `NativeStackScreenProps`)
-- [x] Persistência local de doações isolada em `src/services/doacoesStorage.ts` (Issue #08)
-- [x] Histórico de doações com `FlatList`, componente `ItemDoacao` memoizado e tratamento de lista vazia (Issue #09)
-- [x] Detalhamento de doação e fluxo de exclusão com confirmação (Issue #10)
-- [x] Edição de doação mantendo o identificador original do registro (Issue #11)
-- [x] Filtro dinâmico por tipo de item no histórico via `useMemo` (Issue #12)
-- [x] Resumo estatístico com total geral e soma por tipo de item em ordem decrescente (Issue #13)
-- [x] Responsividade, áreas mínimas de toque e roteiro técnico (Issue #14)
-- [x] Organização do aplicativo em camadas (`types/`, `services/`, `screens/`), criação da API Spring Boot em `api/` e integração dos pontos de coleta com tratamento de erro e status 404 (Issue #16)
+## Endpoints da API
 
-## Documentação Complementar
+### Pontos de Coleta (`/api/v1/pontos`)
+- `GET /api/v1/pontos` — Lista todos os pontos ordenados por `nome`.
+- `GET /api/v1/pontos/filtro?filtro=&page=0&size=10` — Busca paginada no formato `{ content, page }` filtrando por `nome` ou `bairro` (case-insensitive). Padrão de 10 itens ordenados por `nome`; aceita `sort=bairro,asc`.
+- `GET /api/v1/pontos/{id}` — Busca um ponto por UUID (`200` ou `404`).
+- `POST /api/v1/pontos` — Cadastra um ponto (`201` ou `400` se algum campo obrigatório estiver vazio/inválido).
+- `PUT /api/v1/pontos/{id}` — Atualiza um ponto existente (`200`, `400` ou `404`).
+- `DELETE /api/v1/pontos/{id}` — Exclui um ponto (`204` ou `404`).
 
-Consulte o arquivo [Roteiro de Demonstração e Defesa Técnica](ROTEIRO_DEMONSTRACAO.md) para detalhes adicionais sobre as decisões de arquitetura de estado e persistência.
+### Doações (`/api/v1/doacoes`)
+- `GET /api/v1/doacoes` — Lista todas as doações ordenadas por `criadoEm` decrescente.
+- `GET /api/v1/doacoes/filtro?filtro=&page=0&size=10` — Busca paginada filtrando por `tipoItem` (case-insensitive), ordenada da mais nova para a mais antiga (`criadoEm, DESC`).
+- `GET /api/v1/doacoes/{id}` — Busca uma doação por UUID (`200` ou `404`).
+- `POST /api/v1/doacoes` — Cadastra uma doação com `criadoEm` gerado no servidor (`201` ou `400` para quantidade <= 0 ou campo vazio).
+- `PUT /api/v1/doacoes/{id}` — Atualiza `tipoItem`, `quantidade` e `pontoDestino` preservando `id` e `criadoEm` originais (`200`, `400` ou `404`).
+- `DELETE /api/v1/doacoes/{id}` — Exclui uma doação (`204` ou `404`).
+
+---
+
+## Exemplos de Busca Paginada de Pontos (`[N2-2]`)
+
+### 1. Sem filtro (primeira página, 10 itens ordenados por `nome`)
+**Chamada:**
+```http
+GET /api/v1/pontos/filtro?page=0&size=10
+```
+**Formato da resposta (`content` + `page`):**
+```json
+{
+  "content": [
+    {
+      "id": "uuid-gerado",
+      "nome": "Associação Comunitária Vila Nova",
+      "endereco": "5ª Avenida, 390",
+      "bairro": "Setor Leste Vila Nova",
+      "horario": "Seg a Sex, 8h às 17h",
+      "tipo": "distribuição"
+    }
+  ],
+  "page": {
+    "size": 10,
+    "number": 0,
+    "totalElements": 26,
+    "totalPages": 3
+  }
+}
+```
+
+### 2. Filtrando por bairro (case-insensitive)
+**Chamada:**
+```http
+GET /api/v1/pontos/filtro?filtro=bueno&page=0&size=10
+```
+**Resposta:**
+```json
+{
+  "content": [
+    {
+      "id": "uuid-1",
+      "nome": "Parque Vaca Brava - Apoio Comunitário",
+      "endereco": "Av. T-10, s/n",
+      "bairro": "Setor Bueno",
+      "horario": "Seg a Sáb, 8h às 18h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "uuid-2",
+      "nome": "Paróquia Nossa Senhora Rosa Mística",
+      "endereco": "Av. T-11, 210",
+      "bairro": "Setor Bueno",
+      "horario": "Seg a Sex, 8h às 17h",
+      "tipo": "distribuição"
+    }
+  ],
+  "page": {
+    "size": 10,
+    "number": 0,
+    "totalElements": 2,
+    "totalPages": 1
+  }
+}
+```
+
+### 3. Pedindo a segunda página (`page=1`) ordenada por bairro
+**Chamada:**
+```http
+GET /api/v1/pontos/filtro?page=1&size=10&sort=bairro,asc
+```
+**Resposta:** retorna os itens `11` a `20` ordenados por `bairro` crescente, com `"page": { "size": 10, "number": 1, "totalElements": 26, "totalPages": 3 }`.
+
+---
+
+## Prints do Swagger (`[N2-1]` e `[N2-5]`)
+
+> **Pendente de captura local após subir a API (`./mvnw spring-boot:run`):**
+> Adicione nesta seção os prints do Swagger UI (`http://localhost:8080/swagger-ui.html`) para cada endpoint de `/api/v1/pontos` e `/api/v1/doacoes`, incluindo exemplos de resposta **HTTP 400** (validação) e **HTTP 404** (ID inexistente).
+
+---
+
+## Roteiro de Demonstração
+
+Consulte [ROTEIRO_DEMONSTRACAO.md](./ROTEIRO_DEMONSTRACAO.md) para o roteiro completo de até 3 minutos e a defesa de decisão técnica.

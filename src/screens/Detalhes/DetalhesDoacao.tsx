@@ -11,17 +11,18 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import {
-  buscarDoacaoPorId,
-  excluirDoacao,
+  buscarPorId,
+  excluir,
   isDoacaoNaoEncontrada,
-} from "../../services/doacoesStorage";
+} from "../../services/doacoesService";
 import { Doacao } from "../../types/doacao";
 import { RootStackParamList } from "../../types/navigation";
+import { formatarDataHora } from "../Doacoes/ItemDoacao";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DetalhesDoacao">;
 
 export default function DetalhesDoacao({ route, navigation }: Props) {
-  const { doacaoID, onExcluir } = route.params;
+  const { id } = route.params;
 
   const [doacao, setDoacao] = useState<Doacao | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -33,7 +34,7 @@ export default function DetalhesDoacao({ route, navigation }: Props) {
       setCarregando(true);
       setNaoEncontrada(false);
       setErro(null);
-      const dados = await buscarDoacaoPorId(doacaoID);
+      const dados = await buscarPorId(id);
       setDoacao(dados);
     } catch (error) {
       if (isDoacaoNaoEncontrada(error)) {
@@ -48,7 +49,7 @@ export default function DetalhesDoacao({ route, navigation }: Props) {
     } finally {
       setCarregando(false);
     }
-  }, [doacaoID]);
+  }, [id]);
 
   useEffect(() => {
     carregarDoacao();
@@ -77,13 +78,14 @@ export default function DetalhesDoacao({ route, navigation }: Props) {
           style: "destructive",
           onPress: async () => {
             try {
-              await excluirDoacao(doacao.doacaoID);
-              if (onExcluir) {
-                onExcluir(doacao.doacaoID);
-              }
+              await excluir(doacao.id);
               navigation.goBack();
-            } catch {
-              Alert.alert("Erro", "Não foi possível excluir a doação.");
+            } catch (error) {
+              const mensagem =
+                error instanceof Error
+                  ? error.message
+                  : "Não foi possível excluir a doação.";
+              Alert.alert("Erro", mensagem);
             }
           },
         },
@@ -107,10 +109,10 @@ export default function DetalhesDoacao({ route, navigation }: Props) {
         ) : naoEncontrada ? (
           <View style={styles.cardErro}>
             <Text style={styles.naoEncontradoTitulo}>
-              Doação não encontrada
+              doação não encontrada
             </Text>
             <Text style={styles.erroDescricao}>
-              A doação solicitada (ID #{doacaoID}) não foi encontrada.
+              A doação solicitada (ID {id}) não foi encontrada.
             </Text>
           </View>
         ) : erro ? (
@@ -142,23 +144,21 @@ export default function DetalhesDoacao({ route, navigation }: Props) {
 
               <View style={styles.secao}>
                 <Text style={styles.label}>Ponto de Coleta / Destino</Text>
-                <Text style={styles.valor}>
-                  📍 {doacao.pontoDestino || doacao.pontoNome}
-                </Text>
+                <Text style={styles.valor}>📍 {doacao.pontoDestino}</Text>
               </View>
 
-              {(doacao.criadoEm || doacao.dataRegistro) && (
+              {Boolean(doacao.criadoEm) && (
                 <View style={styles.secao}>
                   <Text style={styles.label}>Data do Cadastro</Text>
                   <Text style={styles.valor}>
-                    🕒 {doacao.criadoEm || doacao.dataRegistro}
+                    🕒 {formatarDataHora(doacao.criadoEm)}
                   </Text>
                 </View>
               )}
 
               <View style={styles.secao}>
                 <Text style={styles.label}>Código de Identificação</Text>
-                <Text style={styles.valorId}>#{doacao.doacaoID}</Text>
+                <Text style={styles.valorId}>{doacao.id}</Text>
               </View>
             </View>
 
@@ -212,45 +212,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#555",
   },
-  wrapper: {
-    flex: 1,
-    width: "100%",
-    maxWidth: 600,
-    justifyContent: "space-between",
-    minHeight: 460,
-  },
-  card: {
-    backgroundColor: "#ffffff",
-    padding: 20,
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    borderLeftWidth: 5,
-    borderLeftColor: "#0284c7",
-  },
   cardErro: {
     backgroundColor: "#fff",
     padding: 24,
     borderRadius: 12,
     elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
     borderLeftWidth: 5,
     borderLeftColor: "#dc2626",
     width: "100%",
     maxWidth: 600,
     alignItems: "center",
-    gap: 12,
   },
   naoEncontradoTitulo: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#dc2626",
+    marginBottom: 8,
     textAlign: "center",
   },
   erroDescricao: {
@@ -258,15 +235,26 @@ const styles = StyleSheet.create({
     color: "#444",
     textAlign: "center",
     lineHeight: 22,
+    marginBottom: 16,
+  },
+  wrapper: {
+    width: "100%",
+    maxWidth: 600,
+    gap: 16,
+  },
+  card: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 12,
+    elevation: 4,
+    borderLeftWidth: 5,
+    borderLeftColor: "#0284c7",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
   tipoItem: {
     fontSize: 22,
@@ -283,36 +271,34 @@ const styles = StyleSheet.create({
   badgeTexto: {
     color: "#0369a1",
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   secao: {
     marginTop: 12,
   },
   label: {
     fontSize: 12,
+    fontWeight: "700",
     color: "#64748b",
-    fontWeight: "bold",
     textTransform: "uppercase",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   valor: {
     fontSize: 16,
     color: "#334155",
-    fontWeight: "500",
   },
   valorId: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#94a3b8",
     fontFamily: "monospace",
   },
   acoesContainer: {
-    width: "100%",
     gap: 12,
   },
   botaoEditar: {
     backgroundColor: "#0284c7",
     paddingVertical: 14,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -326,6 +312,7 @@ const styles = StyleSheet.create({
   botaoExcluir: {
     backgroundColor: "#dc2626",
     paddingVertical: 14,
+    paddingHorizontal: 20,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",

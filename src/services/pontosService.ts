@@ -1,31 +1,24 @@
-import { Page, PageMetadata, Ponto } from "../types/ponto";
-import { apiDelete, apiGet, ApiError } from "./api";
+import { Page, PageMetadata, Ponto, PontoPayload } from "../types/ponto";
+import { ApiError, del, get, post, put } from "./api";
 
 export type { Page, PageMetadata };
-export type PageResponse<T> = Page<T>;
 
-/**
- * Parâmetros opcionais de filtro, paginação e ordenação para `/pontos` e `/pontos/filtro`.
- */
-export interface ListarPontosParams {
-  nome?: string;
+export interface BuscarPontosParams {
+  filtro?: string;
   page?: number;
   size?: number;
   sort?: string;
 }
 
-/**
- * Monta a query string de filtro e paginação caso parâmetros tenham sido informados.
- */
-function montarQueryPontos(params?: ListarPontosParams): string {
+function montarQuery(params?: BuscarPontosParams): string {
   if (!params) {
     return "";
   }
 
   const queryParams: string[] = [];
 
-  if (params.nome !== undefined && params.nome.trim() !== "") {
-    queryParams.push(`nome=${encodeURIComponent(params.nome.trim())}`);
+  if (params.filtro !== undefined && params.filtro.trim() !== "") {
+    queryParams.push(`filtro=${encodeURIComponent(params.filtro.trim())}`);
   }
   if (params.page !== undefined) {
     queryParams.push(`page=${encodeURIComponent(String(params.page))}`);
@@ -41,58 +34,56 @@ function montarQueryPontos(params?: ListarPontosParams): string {
 }
 
 /**
- * Consulta `GET /pontos/filtro` na API devolvendo o objeto paginado `Page<Ponto>`.
+ * Lista todos os pontos de coleta/distribuição (`GET /api/v1/pontos`).
  */
-export async function filtrarPontos(
-  nome?: string,
-  params?: Omit<ListarPontosParams, "nome">,
+export async function listar(): Promise<Ponto[]> {
+  return get<Ponto[]>("/api/v1/pontos");
+}
+
+/**
+ * Busca pontos paginados com filtro (`GET /api/v1/pontos/filtro`).
+ */
+export async function buscarPagina(
+  params?: BuscarPontosParams,
 ): Promise<Page<Ponto>> {
-  const query = montarQueryPontos({ ...params, nome });
-  return apiGet<Page<Ponto>>(`/pontos/filtro${query}`);
+  const query = montarQuery(params);
+  return get<Page<Ponto>>(`/api/v1/pontos/filtro${query}`);
 }
 
 /**
- * Consulta `GET /pontos/filtro` na API devolvendo o objeto paginado completo (`content` e `page`).
+ * Busca um ponto pelo seu UUID (`GET /api/v1/pontos/{id}`).
  */
-export async function listarPontosPaginado(
-  params?: ListarPontosParams,
-): Promise<Page<Ponto>> {
-  const query = montarQueryPontos(params);
-  return apiGet<Page<Ponto>>(`/pontos/filtro${query}`);
+export async function buscarPorId(id: string): Promise<Ponto> {
+  return get<Ponto>(`/api/v1/pontos/${encodeURIComponent(id)}`);
 }
 
 /**
- * Lista os pontos de coleta e distribuição vindos da API (`resposta.content`).
+ * Cadastra um novo ponto (`POST /api/v1/pontos`).
  */
-export async function listarPontos(
-  params?: ListarPontosParams,
-): Promise<Ponto[]> {
-  const resposta = await listarPontosPaginado(params);
-  return resposta.content;
+export async function cadastrar(payload: PontoPayload): Promise<Ponto> {
+  return post<Ponto, PontoPayload>("/api/v1/pontos", payload);
 }
 
 /**
- * Busca os detalhes de um ponto específico pelo seu `pontoID` (`GET /pontos/{id}`).
- * Lança `ApiError` com `status = 404` quando o ponto não existe.
+ * Atualiza um ponto existente (`PUT /api/v1/pontos/{id}`).
  */
-export async function buscarPontoPorId(pontoID: string): Promise<Ponto> {
-  return apiGet<Ponto>(`/pontos/${encodeURIComponent(String(pontoID))}`);
+export async function editar(id: string, payload: PontoPayload): Promise<Ponto> {
+  return put<Ponto, PontoPayload>(
+    `/api/v1/pontos/${encodeURIComponent(id)}`,
+    payload,
+  );
 }
 
 /**
- * Exclui um ponto específico pelo seu `pontoID` (`DELETE /pontos/{id}`).
+ * Exclui um ponto pelo seu UUID (`DELETE /api/v1/pontos/{id}`).
  */
-export async function excluirPonto(pontoID: string): Promise<void> {
-  await apiDelete(`/pontos/${encodeURIComponent(String(pontoID))}`);
+export async function excluir(id: string): Promise<void> {
+  await del(`/api/v1/pontos/${encodeURIComponent(id)}`);
 }
 
 /**
- * Verifica se o erro capturado corresponde a um HTTP 404 (ponto não encontrado).
+ * Verifica se o erro corresponde a um HTTP 404 (ponto não encontrado).
  */
 export function isPontoNaoEncontrado(error: unknown): boolean {
   return error instanceof ApiError && error.status === 404;
 }
-
-// Aliases para conveniência da camada de telas
-export const listar = listarPontos;
-export const buscarPorId = buscarPontoPorId;

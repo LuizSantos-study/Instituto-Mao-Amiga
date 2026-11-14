@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -10,25 +10,41 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { filtrarDoacoes } from "../../services/doacoesStorage";
+import { listarPagina } from "../../services/doacoesService";
 import { Doacao } from "../../types/doacao";
 import { RootStackParamList } from "../../types/navigation";
 import ItemDoacao from "./ItemDoacao";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DoacoesCadastradas">;
 
+const PAGE_SIZE = 10;
+
 export default function TelaDoacoesCadastradas({ navigation }: Props) {
   const [doacoes, setDoacoes] = useState<Doacao[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [carregandoMais, setCarregandoMais] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [buscaTipo, setBuscaTipo] = useState("");
+  const [paginaAtual, setPaginaAtual] = useState(0);
+  const [temMaisPaginas, setTemMaisPaginas] = useState(false);
 
-  const carregarDoacoes = useCallback(async (termo?: string) => {
+  const requisicaoEmAndamentoRef = useRef(false);
+  const ultimaPaginaBuscadaRef = useRef(-1);
+
+  const carregarPrimeiraPagina = useCallback(async (termo: string) => {
+    requisicaoEmAndamentoRef.current = true;
+    ultimaPaginaBuscadaRef.current = 0;
     try {
       setCarregando(true);
       setErro(null);
-      const resposta = await filtrarDoacoes(termo);
+      const resposta = await listarPagina({
+        filtro: termo,
+        page: 0,
+        size: PAGE_SIZE,
+      });
       setDoacoes(resposta.content);
+      setPaginaAtual(resposta.page.number);
+      setTemMaisPaginas(resposta.page.number + 1 < resposta.page.totalPages);
     } catch (error) {
       const mensagem =
         error instanceof Error
@@ -37,93 +53,67 @@ export default function TelaDoacoesCadastradas({ navigation }: Props) {
       setErro(mensagem);
     } finally {
       setCarregando(false);
+      requisicaoEmAndamentoRef.current = false;
     }
   }, []);
 
+  const carregarProximaPagina = useCallback(async () => {
+    if (
+      requisicaoEmAndamentoRef.current ||
+      !temMaisPaginas ||
+      carregando ||
+      carregandoMais
+    ) {
+      return;
+    }
+
+    const proximaPagina = paginaAtual + 1;
+    if (ultimaPaginaBuscadaRef.current === proximaPagina) {
+      return;
+    }
+
+    requisicaoEmAndamentoRef.current = true;
+    ultimaPaginaBuscadaRef.current = proximaPagina;
+    try {
+      setCarregandoMais(true);
+      const resposta = await listarPagina({
+        filtro: buscaTipo,
+        page: proximaPagina,
+        size: PAGE_SIZE,
+      });
+      setDoacoes((prev) => {
+        const idsExistentes = new Set(prev.map((d) => d.id));
+        const novas = resposta.content.filter((d) => !idsExistentes.has(d.id));
+        return [...prev, ...novas];
+      });
+      setPaginaAtual(resposta.page.number);
+      setTemMaisPaginas(resposta.page.number + 1 < resposta.page.totalPages);
+    } catch {
+      ultimaPaginaBuscadaRef.current = paginaAtual;
+    } finally {
+      setCarregandoMais(false);
+      requisicaoEmAndamentoRef.current = false;
+    }
+  }, [buscaTipo, carregando, carregandoMais, paginaAtual, temMaisPaginas]);
+
   useEffect(() => {
-    carregarDoacoes(buscaTipo);
-  }, [buscaTipo, carregarDoacoes]);
+    carregarPrimeiraPagina(buscaTipo);
+  }, [buscaTipo, carregarPrimeiraPagina]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
-      carregarDoacoes(buscaTipo);
+      carregarPrimeiraPagina(buscaTipo);
     });
     return unsubscribe;
-  }, [navigation, buscaTipo, carregarDoacoes]);
-
-  // Resumo dinâmico com o total geral e a quantidade somada por tipo de item (ordenado do maior para o menor)
-  const { totalGeralRegistros, totalGeralQuantidade, totaisPorTipo } =
-    useMemo(() => {
-      const contagem: Record<string, number> = {};
-      let totalQtd = 0;
-
-      for (const item of doacoes) {
-        const tipo = item.tipoItem.trim();
-        contagem[tipo] = (contagem[tipo] || 0) + item.quantidade;
-        totalQtd += item.quantidade;
-      }
-
-      const tiposOrdenados = Object.entries(contagem)
-        .map(([tipo, quantidade]) => ({ tipo, quantidade }))
-        .sort((a, b) => b.quantidade - a.quantidade);
-
-      return {
-        totalGeralRegistros: doacoes.length,
-        totalGeralQuantidade: totalQtd,
-        totaisPorTipo: tiposOrdenados,
-      };
-    }, [doacoes]);
+  }, [navigation, buscaTipo, carregarPrimeiraPagina]);
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <View style={styles.wrapper}>
         <Text style={styles.titulo}>Minhas doações</Text>
         <Text style={styles.subtitulo}>
-          Histórico de itens consultados diretamente na API.
+          Histórico de doações consultado diretamente na API.
         </Text>
-
-        {!carregando && !erro && doacoes.length > 0 && (
-          <View style={styles.cardResumo}>
-            <View style={styles.resumoHeader}>
-              <Text style={styles.resumoTitulo}>📊 Resumo Geral</Text>
-              <Text style={styles.resumoTotalGeral}>
-                {totalGeralRegistros}{" "}
-                {totalGeralRegistros === 1 ? "registro" : "registros"} (
-                {totalGeralQuantidade}{" "}
-                {totalGeralQuantidade === 1 ? "item" : "itens"})
-              </Text>
-            </View>
-
-            <Text style={styles.resumoSubtitulo}>
-              Totais por tipo (do maior para o menor):
-            </Text>
-            <View style={styles.resumoTiposContainer}>
-              {totaisPorTipo.map(({ tipo, quantidade }) => {
-                const ativo =
-                  buscaTipo.trim().toLowerCase() === tipo.toLowerCase();
-                return (
-                  <TouchableOpacity
-                    key={tipo}
-                    style={[styles.chipResumo, ativo && styles.chipResumoAtivo]}
-                    onPress={() =>
-                      setBuscaTipo((prev) =>
-                        prev.trim().toLowerCase() === tipo.toLowerCase()
-                          ? ""
-                          : tipo,
-                      )
-                    }
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.chipTipo}>{tipo}</Text>
-                    <Text style={styles.chipQuantidade}>
-                      {quantidade} {quantidade === 1 ? "un" : "un"}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-        )}
 
         <TextInput
           style={styles.inputBusca}
@@ -146,7 +136,7 @@ export default function TelaDoacoesCadastradas({ navigation }: Props) {
             <Text style={styles.emptySubtitulo}>{erro}</Text>
             <TouchableOpacity
               style={styles.botaoCadastrarVazio}
-              onPress={() => carregarDoacoes(buscaTipo)}
+              onPress={() => carregarPrimeiraPagina(buscaTipo)}
             >
               <Text style={styles.botaoCadastrarVazioTexto}>
                 Tentar novamente
@@ -156,11 +146,23 @@ export default function TelaDoacoesCadastradas({ navigation }: Props) {
         ) : (
           <FlatList
             data={doacoes}
-            keyExtractor={(item) => item.doacaoID}
+            keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContainer}
             showsVerticalScrollIndicator={false}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
+            onEndReached={carregarProximaPagina}
+            onEndReachedThreshold={0.3}
+            ListFooterComponent={
+              carregandoMais ? (
+                <View style={styles.footerLoading}>
+                  <ActivityIndicator size="small" color="#0284c7" />
+                  <Text style={styles.footerLoadingTexto}>
+                    Carregando mais doações...
+                  </Text>
+                </View>
+              ) : null
+            }
             ListEmptyComponent={
               buscaTipo.trim() === "" ? (
                 <View style={styles.emptyContainer}>
@@ -206,12 +208,7 @@ export default function TelaDoacoesCadastradas({ navigation }: Props) {
                 item={item}
                 onPress={(doacao) =>
                   navigation.navigate("DetalhesDoacao", {
-                    doacaoID: doacao.doacaoID,
-                    onExcluir: (idExcluido: string) => {
-                      setDoacoes((prev) =>
-                        prev.filter((d) => d.doacaoID !== idExcluido),
-                      );
-                    },
+                    id: doacao.id,
                   })
                 }
               />
@@ -242,158 +239,93 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     maxWidth: 600,
-    paddingHorizontal: 16,
     paddingTop: 16,
   },
   titulo: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#1a1a1a",
-    marginBottom: 4,
-    textAlign: "center",
+    color: "#1B3A5C",
+    paddingHorizontal: 16,
   },
   subtitulo: {
     fontSize: 14,
-    color: "#666",
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingTexto: {
-    marginTop: 10,
-    fontSize: 14,
-    color: "#666",
-  },
-  listContainer: {
-    paddingBottom: 16,
-  },
-  cardResumo: {
-    backgroundColor: "#ffffff",
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderLeftWidth: 4,
-    borderLeftColor: "#0284c7",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-  },
-  resumoHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  resumoTitulo: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#1e293b",
-  },
-  resumoTotalGeral: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#0284c7",
-  },
-  resumoSubtitulo: {
-    fontSize: 12,
     color: "#64748b",
-    marginBottom: 10,
-    textTransform: "uppercase",
-    fontWeight: "600",
-  },
-  resumoTiposContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  chipResumo: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f1f5f9",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    gap: 6,
-    minHeight: 44,
-    justifyContent: "center",
-  },
-  chipResumoAtivo: {
-    backgroundColor: "#e0f2fe",
-    borderColor: "#0284c7",
-  },
-  chipTipo: {
-    fontSize: 13,
-    color: "#334155",
-    fontWeight: "500",
-  },
-  chipQuantidade: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#0369a1",
-    backgroundColor: "#e0f2fe",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    marginTop: 4,
+    marginBottom: 12,
   },
   inputBusca: {
-    backgroundColor: "#ffffff",
-    width: "100%",
-    marginBottom: 16,
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    marginBottom: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 8,
-    borderColor: "#e2e8f0",
+    borderColor: "#e0e0e0",
     borderWidth: 1,
     fontSize: 16,
     color: "#333",
     minHeight: 48,
   },
-  emptyContainer: {
-    alignItems: "center",
+  loadingContainer: {
+    flex: 1,
     justifyContent: "center",
-    paddingVertical: 48,
+    alignItems: "center",
+    padding: 24,
+  },
+  loadingTexto: {
+    marginTop: 12,
+    fontSize: 15,
+    color: "#555",
+  },
+  listContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    flexGrow: 1,
+  },
+  footerLoading: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 12,
+    gap: 8,
+  },
+  footerLoadingTexto: {
+    fontSize: 14,
+    color: "#555",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 24,
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    marginTop: 20,
+    paddingVertical: 40,
   },
   emptyIcon: {
-    fontSize: 48,
-    marginBottom: 12,
+    fontSize: 40,
+    marginBottom: 10,
   },
   emptyTitulo: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
+    color: "#1B3A5C",
     marginBottom: 6,
     textAlign: "center",
   },
   emptySubtitulo: {
     fontSize: 14,
-    color: "#777",
+    color: "#64748b",
     textAlign: "center",
+    marginBottom: 16,
     lineHeight: 20,
-    marginBottom: 8,
   },
   botaoCadastrarVazio: {
     backgroundColor: "#0284c7",
     paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     borderRadius: 8,
-    marginTop: 12,
-    alignItems: "center",
-    justifyContent: "center",
     minHeight: 48,
+    justifyContent: "center",
   },
   botaoCadastrarVazioTexto: {
     color: "#ffffff",
@@ -401,28 +333,27 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   botaoLimparBusca: {
-    marginTop: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#0284c7",
-    minHeight: 44,
-    alignItems: "center",
+    backgroundColor: "#e0f2fe",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    minHeight: 48,
     justifyContent: "center",
   },
   botaoLimparBuscaTexto: {
-    color: "#0284c7",
-    fontSize: 14,
-    fontWeight: "600",
+    color: "#0369a1",
+    fontSize: 15,
+    fontWeight: "bold",
   },
   botaoNovaDoacao: {
     backgroundColor: "#0284c7",
+    marginHorizontal: 16,
+    marginBottom: 16,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: 12,
+    minHeight: 48,
   },
   botaoNovaDoacaoTexto: {
     color: "#ffffff",

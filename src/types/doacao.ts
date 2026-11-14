@@ -3,17 +3,14 @@ import { Page, PageMetadata } from "./ponto";
 export type { Page, PageMetadata };
 
 /**
- * Formato da doação retornado pela API Spring Boot (`/doacoes`).
+ * Formato da doação retornado pela API Spring Boot (`/api/v1/doacoes`).
  */
 export interface Doacao {
-  doacaoID: string;
+  id: string;
   tipoItem: string;
   quantidade: number;
   pontoDestino: string;
   criadoEm: string;
-  pontoID?: string;
-  pontoNome?: string;
-  dataRegistro?: string;
 }
 
-export type NovaDoacaoPayload = Omit<Doacao, "doacaoID" | "criadoEm" | "dataRegistro">;
+export type NovaDoacaoPayload = Omit<Doacao, "id" | "criadoEm">;

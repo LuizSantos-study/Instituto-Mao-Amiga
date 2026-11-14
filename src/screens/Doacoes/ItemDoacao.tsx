@@ -7,10 +7,20 @@ interface ItemDoacaoProps {
   onPress?: (doacao: Doacao) => void;
 }
 
-/**
- * Componente isolado para renderização de cada item do histórico de doações.
- * Utiliza React.memo para evitar re-renderizações desnecessárias em listas grandes.
- */
+export function formatarDataHora(iso?: string): string {
+  if (!iso) return "";
+  const data = new Date(iso);
+  if (Number.isNaN(data.getTime())) {
+    return iso;
+  }
+  const dia = String(data.getDate()).padStart(2, "0");
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const ano = data.getFullYear();
+  const hora = String(data.getHours()).padStart(2, "0");
+  const min = String(data.getMinutes()).padStart(2, "0");
+  return `${dia}/${mes}/${ano} às ${hora}:${min}`;
+}
+
 export const ItemDoacao = React.memo(function ItemDoacao({
   item,
   onPress,
@@ -33,17 +43,15 @@ export const ItemDoacao = React.memo(function ItemDoacao({
       </View>
 
       <View style={styles.linhaInfo}>
-        <Text style={styles.labelInfo}>Ponto de Coleta:</Text>
-        <Text style={styles.valorPonto}>
-          📍 {item.pontoDestino || item.pontoNome}
-        </Text>
+        <Text style={styles.labelInfo}>Ponto de Destino:</Text>
+        <Text style={styles.valorPonto}>📍 {item.pontoDestino}</Text>
       </View>
 
-      {(item.criadoEm || item.dataRegistro) && (
+      {Boolean(item.criadoEm) && (
         <View style={styles.linhaInfo}>
           <Text style={styles.labelInfo}>Data do cadastro:</Text>
           <Text style={styles.valorData}>
-            🕒 {item.criadoEm || item.dataRegistro}
+            🕒 {formatarDataHora(item.criadoEm)}
           </Text>
         </View>
       )}

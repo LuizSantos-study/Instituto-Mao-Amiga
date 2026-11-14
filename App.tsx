@@ -5,6 +5,8 @@ import { StatusBar } from "expo-status-bar";
 
 import PontosColeta from "./src/screens/PontosColeta/PontosColeta";
 import DetalhesPontosColeta from "./src/screens/Detalhes/DetalhesPontosColeta";
+import TelaCadastroPonto from "./src/screens/Cadastro/TelaCadastroPonto";
+import TelaMeusPontos from "./src/screens/PontosColeta/TelaMeusPontos";
 import TelaCadastroDoacao from "./src/screens/Cadastro/TelaCadastroDoacao";
 import TelaDoacoesCadastradas from "./src/screens/Doacoes/TelaDoacoesCadastradas";
 import DetalhesDoacao from "./src/screens/Detalhes/DetalhesDoacao";
@@ -25,6 +27,16 @@ export default function App() {
           name="DetalhesPontosColeta"
           component={DetalhesPontosColeta}
           options={{ title: "Detalhes do Ponto" }}
+        />
+        <Stack.Screen
+          name="CadastroPonto"
+          component={TelaCadastroPonto}
+          options={{ title: "Novo Ponto" }}
+        />
+        <Stack.Screen
+          name="MeusPontos"
+          component={TelaMeusPontos}
+          options={{ title: "Meus pontos" }}
         />
         <Stack.Screen
           name="CadastroDoacao"

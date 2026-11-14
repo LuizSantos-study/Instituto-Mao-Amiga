@@ -1,14 +1,24 @@
 package com.luizsantos.institutomaoamiga.repository;
 
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.luizsantos.institutomaoamiga.model.Ponto;
+import com.luizsantos.institutomaoamiga.entity.Ponto;
 
 @Repository
-public interface PontoRepository extends JpaRepository<Ponto, Long> {
+public interface PontoRepository extends JpaRepository<Ponto, UUID> {
 
-    Page<Ponto> findByNomeContainingIgnoreCase(String nome, Pageable pageable);
+    @Query("""
+            SELECT p FROM Ponto p
+            WHERE :filtro IS NULL OR :filtro = ''
+               OR LOWER(p.nome) LIKE LOWER(CONCAT('%', :filtro, '%'))
+               OR LOWER(p.bairro) LIKE LOWER(CONCAT('%', :filtro, '%'))
+            """)
+    Page<Ponto> buscarPorFiltro(@Param("filtro") String filtro, Pageable pageable);
 }
